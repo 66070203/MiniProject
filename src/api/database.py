@@ -6,8 +6,7 @@ Stores prediction logs and user feedback using SQLAlchemy.
 
 from datetime import datetime
 
-from sqlalchemy import (Column, DateTime, Float, Integer, String, Text,
-                        create_engine)
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from src.utils.config import get_config

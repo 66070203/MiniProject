@@ -240,9 +240,7 @@ class GuardianPredictor:
 
         import pandas as pd
 
-        input_df = pd.DataFrame(
-            [{"text": text, "text_clean": text_clean, **signals}]
-        )
+        input_df = pd.DataFrame([{"text": text, "text_clean": text_clean, **signals}])
 
         proba = self.model.predict_proba(input_df)[0]
         ml_label_id = int(np.argmax(proba))
@@ -256,10 +254,7 @@ class GuardianPredictor:
         confidence_source = "ml"
         llm_explanation: str | None = None
 
-        if (
-            self.groq_classifier is not None
-            and ml_confidence < self._llm_threshold
-        ):
+        if self.groq_classifier is not None and ml_confidence < self._llm_threshold:
             logger.info(
                 f"ML confidence={ml_confidence:.3f} < threshold={self._llm_threshold} "
                 "→ calling Groq LLM"

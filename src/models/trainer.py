@@ -20,8 +20,11 @@ import mlflow
 import mlflow.sklearn
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import (GradientBoostingClassifier,
-                              RandomForestClassifier, VotingClassifier)
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+    VotingClassifier,
+)
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
@@ -274,8 +277,7 @@ def run_training_pipeline(
     val_df = pd.read_csv(val_path)
 
     # Preprocess (add text_clean + signal features)
-    from src.data.preprocessor import (ThaiTextPreprocessor,
-                                       preprocess_dataframe)
+    from src.data.preprocessor import ThaiTextPreprocessor, preprocess_dataframe
 
     preprocessor = ThaiTextPreprocessor(
         remove_stopwords=cfg["preprocessing"]["remove_stopwords"],

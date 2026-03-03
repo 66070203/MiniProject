@@ -94,7 +94,7 @@ TEXTS: dict = {
                 "title": "คัดลอกข้อความนั้น",
                 "body": (
                     "กดค้างที่ข้อความในโทรศัพท์ของท่าน จนกว่าจะมีเมนูขึ้นมา "
-                    "แล้วเลือก <strong>\"คัดลอก\"</strong> หรือ <strong>\"Copy\"</strong> "
+                    'แล้วเลือก <strong>"คัดลอก"</strong> หรือ <strong>"Copy"</strong> '
                     "<br>หากเป็นอีเมล ให้ลากคลุมข้อความทั้งหมด แล้วกด Ctrl+C (บนคอมพิวเตอร์)"
                 ),
             },
@@ -104,15 +104,15 @@ TEXTS: dict = {
                 "title": "วางข้อความในกล่องด้านล่าง",
                 "body": (
                     "กดค้างในกล่องสี่เหลี่ยมสีขาวที่เขียนว่า "
-                    "<em>\"วางข้อความ SMS, LINE หรืออีเมลที่น่าสงสัยที่นี่...\"</em> "
-                    "แล้วเลือก <strong>\"วาง\"</strong> หรือ <strong>\"Paste\"</strong> "
+                    '<em>"วางข้อความ SMS, LINE หรืออีเมลที่น่าสงสัยที่นี่..."</em> '
+                    'แล้วเลือก <strong>"วาง"</strong> หรือ <strong>"Paste"</strong> '
                     "<br>บนคอมพิวเตอร์ สามารถกด <strong>Ctrl+V</strong> ได้เลย"
                 ),
             },
             {
                 "num": "4",
                 "icon": "🔍",
-                "title": "กดปุ่ม \"ตรวจสอบข้อความ\"",
+                "title": 'กดปุ่ม "ตรวจสอบข้อความ"',
                 "body": (
                     "กดปุ่มสีน้ำเงินขนาดใหญ่ <strong>🔍 ตรวจสอบข้อความ</strong> ด้านล่างกล่อง "
                     "รอสักครู่ (ไม่เกิน 5 วินาที) ระบบ AI จะวิเคราะห์ข้อความให้อัตโนมัติ"
@@ -191,7 +191,12 @@ TEXTS: dict = {
         "feedback_header": "**💬 ผลลัพธ์ไม่ถูกต้องหรือไม่?**",
         "feedback_select_label": "เลือกคำตอบที่ถูกต้อง:",
         "feedback_placeholder": "-- กรุณาเลือก --",
-        "feedback_options": ["", "ham (ข้อความปกติ)", "spam (สแปม)", "phishing (ฟิชชิ่ง)"],
+        "feedback_options": [
+            "",
+            "ham (ข้อความปกติ)",
+            "spam (สแปม)",
+            "phishing (ฟิชชิ่ง)",
+        ],
         "btn_feedback": "📤 ส่งความคิดเห็น",
         "feedback_success": "✅ ขอบคุณสำหรับข้อเสนอแนะ จะนำไปปรับปรุงระบบ",
         "feedback_fail": "ไม่สามารถบันทึกความคิดเห็นได้ในขณะนี้",
@@ -265,7 +270,7 @@ TEXTS: dict = {
                 "title": "Copy that message",
                 "body": (
                     "Press and hold the message on your phone until a menu appears, "
-                    "then tap <strong>\"Copy\"</strong>. "
+                    'then tap <strong>"Copy"</strong>. '
                     "<br>On a computer, select all the text and press <strong>Ctrl+C</strong>."
                 ),
             },
@@ -275,15 +280,15 @@ TEXTS: dict = {
                 "title": "Paste the message in the box below",
                 "body": (
                     "Press and hold inside the white box that says "
-                    "<em>\"Paste a suspicious SMS, LINE message, or email here...\"</em> "
-                    "then tap <strong>\"Paste\"</strong>. "
+                    '<em>"Paste a suspicious SMS, LINE message, or email here..."</em> '
+                    'then tap <strong>"Paste"</strong>. '
                     "<br>On a computer, press <strong>Ctrl+V</strong>."
                 ),
             },
             {
                 "num": "4",
                 "icon": "🔍",
-                "title": "Press the \"Check Message\" button",
+                "title": 'Press the "Check Message" button',
                 "body": (
                     "Tap the large blue button <strong>🔍 Check Message</strong> below the box. "
                     "Wait a moment (up to 5 seconds) — the AI will analyze it automatically."
@@ -362,7 +367,12 @@ TEXTS: dict = {
         "feedback_header": "**💬 Was the result incorrect?**",
         "feedback_select_label": "Select the correct answer:",
         "feedback_placeholder": "-- Please select --",
-        "feedback_options": ["", "ham (Safe message)", "spam (Spam)", "phishing (Phishing)"],
+        "feedback_options": [
+            "",
+            "ham (Safe message)",
+            "spam (Spam)",
+            "phishing (Phishing)",
+        ],
         "btn_feedback": "📤 Submit Feedback",
         "feedback_success": "✅ Thank you for your feedback! It will help improve the system.",
         "feedback_fail": "Could not save feedback at this time.",
@@ -927,7 +937,9 @@ if "feedback_submitted" not in st.session_state:
 if "lang" not in st.session_state:
     st.session_state.lang = "th"
 if "chat_messages" not in st.session_state:
-    st.session_state.chat_messages = []  # [{"role": "user"|"assistant", "content": "..."}]
+    st.session_state.chat_messages = (
+        []
+    )  # [{"role": "user"|"assistant", "content": "..."}]
 if "chat_input_prefill" not in st.session_state:
     st.session_state.chat_input_prefill = ""
 if "_chat_pending" not in st.session_state:
@@ -1050,6 +1062,7 @@ def _escape_html(text: str) -> str:
 def _md_to_html(text: str) -> str:
     """แปลง markdown เบื้องต้น → HTML สำหรับ bot bubble (trusted source)"""
     import re as _re
+
     text = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
     text = _re.sub(r"\*([^*\n]+?)\*", r"<em>\1</em>", text)
     text = text.replace("\n", "<br>")
@@ -1140,7 +1153,9 @@ def display_result(result: dict, original_text: str, T: dict) -> None:
 
     # Keywords
     if keywords:
-        st.markdown(T["keywords_label"] + " " + " • ".join([f"`{kw}`" for kw in keywords]))
+        st.markdown(
+            T["keywords_label"] + " " + " • ".join([f"`{kw}`" for kw in keywords])
+        )
 
     # Probability breakdown
     with st.expander(T["prob_expander"]):
@@ -1198,7 +1213,9 @@ if _LOGO_PATH.exists():
     with _mcol:
         st.image(str(_LOGO_PATH), use_container_width=True)
 else:
-    st.markdown(f'<div class="main-title">{T["main_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="main-title">{T["main_title"]}</div>', unsafe_allow_html=True
+    )
 
 st.markdown(
     f'<div class="logo-subtitle">{T["subtitle"]}</div>',
@@ -1289,7 +1306,11 @@ with tab_check:
 # ===========================================================================
 with tab_chat:
     lang = st.session_state.lang
-    online_txt = "🟢 ออนไลน์ — ถามได้เลยครับ/ค่ะ" if lang == "th" else "🟢 Online — Ask me anything"
+    online_txt = (
+        "🟢 ออนไลน์ — ถามได้เลยครับ/ค่ะ"
+        if lang == "th"
+        else "🟢 Online — Ask me anything"
+    )
 
     # ── LINE-like header ──────────────────────────────────────────────────
     st.markdown(
@@ -1331,7 +1352,7 @@ with tab_chat:
             f'<div class="chat-empty-state">'
             f'<div class="chat-empty-icon">💬</div>'
             f'{T["chat_empty"]}'
-            f'</div>',
+            f"</div>",
             unsafe_allow_html=True,
         )
 
@@ -1342,7 +1363,7 @@ with tab_chat:
                 st.markdown(
                     f'<div class="line-user-wrap">'
                     f'<div class="line-bubble-user">{_escape_html(msg["content"])}</div>'
-                    f'</div>',
+                    f"</div>",
                     unsafe_allow_html=True,
                 )
         else:
@@ -1350,7 +1371,7 @@ with tab_chat:
                 st.markdown(
                     f'<div class="line-bot-wrap">'
                     f'<div class="line-bubble-bot">{_md_to_html(msg["content"])}</div>'
-                    f'</div>',
+                    f"</div>",
                     unsafe_allow_html=True,
                 )
 
@@ -1365,9 +1386,13 @@ with tab_chat:
                 )
         st.session_state._chat_pending = None
         if _reply:
-            st.session_state.chat_messages.append({"role": "assistant", "content": _reply})
+            st.session_state.chat_messages.append(
+                {"role": "assistant", "content": _reply}
+            )
         else:
-            st.session_state.chat_messages.append({"role": "assistant", "content": T["chat_err_fail"]})
+            st.session_state.chat_messages.append(
+                {"role": "assistant", "content": T["chat_err_fail"]}
+            )
         st.rerun()
 
     # ── Clear button (only when there are messages) ───────────────────────

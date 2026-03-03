@@ -10,9 +10,15 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, f1_score, precision_score,
-                             recall_score, roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 
 from src.utils.config import get_config, get_project_root
 from src.utils.logger import get_logger

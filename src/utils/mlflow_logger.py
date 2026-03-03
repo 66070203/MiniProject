@@ -44,7 +44,9 @@ def _init_mlflow() -> None:
     exp_name = mlflow_cfg.get("prediction_experiment", "prediction_logs")
     mlflow.set_experiment(exp_name)
 
-    logger.info(f"MLflow prediction logger initialised — URI={tracking_uri}, experiment={exp_name}")
+    logger.info(
+        f"MLflow prediction logger initialised — URI={tracking_uri}, experiment={exp_name}"
+    )
     _initialized = True
 
 

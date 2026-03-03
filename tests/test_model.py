@@ -180,8 +180,7 @@ class TestPredictorUnit:
             predictor.load(model_path=str(tmp_path / "nonexistent.joblib"))
 
     def test_label_names_coverage(self):
-        from src.models.predictor import (LABEL_NAMES, LABEL_NAMES_TH,
-                                          RISK_LEVELS)
+        from src.models.predictor import LABEL_NAMES, LABEL_NAMES_TH, RISK_LEVELS
 
         for i in range(3):
             assert i in LABEL_NAMES
@@ -203,8 +202,7 @@ class TestEndToEndTraining:
         from sklearn.pipeline import Pipeline
 
         from src.data.generator import generate_dataset
-        from src.data.preprocessor import (ThaiTextPreprocessor,
-                                           preprocess_dataframe)
+        from src.data.preprocessor import ThaiTextPreprocessor, preprocess_dataframe
         from src.features.feature_engineering import build_feature_pipeline
 
         # Generate small dataset

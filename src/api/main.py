@@ -20,12 +20,24 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.api.chatbot import get_chatbot
-from src.api.database import (get_session, get_stats, init_db, log_feedback,
-                              log_prediction)
-from src.api.schemas import (ChatRequest, ChatResponse, FeedbackRequest,
-                             FeedbackResponse, HealthResponse,
-                             ModelInfoResponse, PredictRequest,
-                             PredictResponse, StatsResponse)
+from src.api.database import (
+    get_session,
+    get_stats,
+    init_db,
+    log_feedback,
+    log_prediction,
+)
+from src.api.schemas import (
+    ChatRequest,
+    ChatResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    HealthResponse,
+    ModelInfoResponse,
+    PredictRequest,
+    PredictResponse,
+    StatsResponse,
+)
 from src.models.predictor import get_predictor
 from src.utils.config import get_config
 from src.utils.logger import get_logger
