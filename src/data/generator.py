@@ -1,5 +1,5 @@
 """
-Synthetic Thai SMS/LINE dataset generator for GuardianShield.
+Synthetic Thai SMS/LINE dataset generator for ScamGuard.
 
 Generates realistic Thai-language spam, phishing, and ham messages
 reflecting common patterns that affect elderly Thai users.

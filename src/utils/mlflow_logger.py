@@ -1,5 +1,5 @@
 """
-MLflow prediction logger for GuardianShield.
+MLflow prediction logger for ScamGuard.
 
 Logs each inference request as a short MLflow run inside the
 dedicated "prediction_logs" experiment, keeping model-training

@@ -1,4 +1,4 @@
-"""Feature engineering modules for GuardianShield."""
+"""Feature engineering modules for ScamGuard."""
 
 from .feature_engineering import (
     SIGNAL_FEATURE_COLS,

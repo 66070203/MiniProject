@@ -1,1 +1,1 @@
-"""API modules for GuardianShield."""
+"""API modules for ScamGuard."""

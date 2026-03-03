@@ -1,5 +1,5 @@
 """
-Data ingestion module for GuardianShield.
+Data ingestion module for ScamGuard.
 
 Handles loading, translating (approximate), and merging of:
   1. UCI SMS Spam Collection (English → Thai approximate mapping)

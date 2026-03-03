@@ -1,4 +1,4 @@
-"""Utility modules for GuardianShield."""
+"""Utility modules for ScamGuard."""
 
 from .config import Config, get_config, get_project_root
 from .logger import get_logger

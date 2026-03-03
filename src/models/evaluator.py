@@ -1,5 +1,5 @@
 """
-Model evaluation utilities for GuardianShield.
+Model evaluation utilities for ScamGuard.
 
 Provides metrics computation, confusion matrix, and reporting functions.
 """

@@ -1,4 +1,4 @@
-"""Structured logging setup for GuardianShield."""
+"""Structured logging setup for ScamGuard."""
 
 import logging
 import os

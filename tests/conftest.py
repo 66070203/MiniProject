@@ -1,5 +1,5 @@
 """
-Pytest shared fixtures for GuardianShield tests.
+Pytest shared fixtures for ScamGuard tests.
 """
 
 import os

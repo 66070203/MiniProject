@@ -1,5 +1,5 @@
 """
-Thai text preprocessor for GuardianShield.
+Thai text preprocessor for ScamGuard.
 
 Handles:
 - URL, phone number, and special character removal

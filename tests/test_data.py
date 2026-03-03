@@ -252,7 +252,7 @@ class TestConfigUtils:
 
         cfg = get_config()
         name = cfg.get("project", "name")
-        assert name == "GuardianShield"
+        assert name == "ScamGuard"
 
     def test_config_get_missing_key_returns_default(self):
         from src.utils.config import get_config
@@ -274,4 +274,4 @@ class TestConfigUtils:
 
         Config.reset()
         cfg = get_config()
-        assert cfg["project"]["name"] == "GuardianShield"
+        assert cfg["project"]["name"] == "ScamGuard"

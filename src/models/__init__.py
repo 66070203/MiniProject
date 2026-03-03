@@ -1,4 +1,4 @@
-"""ML model modules for GuardianShield."""
+"""ML model modules for ScamGuard."""
 
 from .evaluator import compute_metrics, evaluate_on_test_set
 from .predictor import GuardianPredictor, get_predictor

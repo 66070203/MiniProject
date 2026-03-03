@@ -83,10 +83,10 @@ jobs:
 
       - name: Build API Docker image
         run: |
-          docker build -f docker/Dockerfile.api -t guardianshield-api:test .
+          docker build -f docker/Dockerfile.api -t scamguard-api:test .
           echo "API image built successfully"
 
       - name: Build App Docker image
         run: |
-          docker build -f docker/Dockerfile.app -t guardianshield-app:test .
+          docker build -f docker/Dockerfile.app -t scamguard-app:test .
           echo "App image built successfully"

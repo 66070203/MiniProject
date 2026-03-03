@@ -1,4 +1,4 @@
-"""Data pipeline modules for GuardianShield."""
+"""Data pipeline modules for ScamGuard."""
 
 from .generator import generate_dataset, save_synthetic_dataset
 from .ingestion import run_ingestion_pipeline

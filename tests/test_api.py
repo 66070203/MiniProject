@@ -88,7 +88,7 @@ class TestRootEndpoint:
     def test_root_has_project_name(self, client):
         data = client.get("/").json()
         assert "project" in data
-        assert data["project"] == "GuardianShield"
+        assert data["project"] == "ScamGuard"
 
 
 class TestModelInfoEndpoint:

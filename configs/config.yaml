@@ -85,18 +85,18 @@ llm:
   timeout_seconds: 10
 
 mlflow:
-  experiment_name: "guardianshield_spam_detection"
+  experiment_name: "scamguard_spam_detection"
   prediction_experiment: "prediction_logs"
   tracking_uri: "mlruns"
-  registered_model_name: "guardianshield_ensemble"
+  registered_model_name: "scamguard_ensemble"
 
 api:
   host: "0.0.0.0"
   port: 8000
-  title: "GuardianShield API"
+  title: "ScamGuard API"
   description: "Spam and phishing detection API for elderly users"
   version: "1.0.0"
-  db_url: "sqlite:///./guardianshield.db"
+  db_url: "sqlite:///./scamguard.db"
 
 streamlit:
   port: 8501

@@ -1,5 +1,5 @@
 """
-Model training pipeline for GuardianShield.
+Model training pipeline for ScamGuard.
 
 Trains and tracks:
   - Logistic Regression (baseline)

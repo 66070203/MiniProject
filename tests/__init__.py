@@ -1,1 +1,1 @@
-"""GuardianShield test suite."""
+"""ScamGuard test suite."""

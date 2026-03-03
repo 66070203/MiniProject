@@ -1,4 +1,4 @@
-"""Configuration loader for GuardianShield."""
+"""Configuration loader for ScamGuard."""
 
 import os
 from pathlib import Path

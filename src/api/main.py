@@ -1,5 +1,5 @@
 """
-GuardianShield FastAPI backend application.
+ScamGuard FastAPI backend application.
 
 Endpoints:
     POST /predict       — Classify a Thai message as ham/spam/phishing
@@ -50,7 +50,7 @@ cfg = get_config()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown lifecycle events."""
-    logger.info("Starting GuardianShield API...")
+    logger.info("Starting ScamGuard API...")
     init_db()
     try:
         predictor = get_predictor()
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
     except FileNotFoundError as e:
         logger.warning(f"Model not found at startup: {e}. Will retry on first request.")
     yield
-    logger.info("Shutting down GuardianShield API.")
+    logger.info("Shutting down ScamGuard API.")
 
 
 app = FastAPI(

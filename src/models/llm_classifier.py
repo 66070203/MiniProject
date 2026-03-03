@@ -1,5 +1,5 @@
 """
-Groq LLM classifier for GuardianShield.
+Groq LLM classifier for ScamGuard.
 
 Provides a second-opinion classification for low-confidence ML predictions
 using the Groq API (llama-3.3-70b-versatile).

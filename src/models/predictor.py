@@ -1,5 +1,5 @@
 """
-Inference / prediction module for GuardianShield.
+Inference / prediction module for ScamGuard.
 
 Loads the trained model and provides prediction with explanation.
 Supports Two-Stage Hybrid mode: ML Ensemble → Groq LLM (for low-confidence cases).

@@ -1,5 +1,5 @@
 """
-Feature engineering pipeline for GuardianShield.
+Feature engineering pipeline for ScamGuard.
 
 Combines TF-IDF text features with hand-crafted signal features
 into a unified scikit-learn Pipeline-compatible transformer.

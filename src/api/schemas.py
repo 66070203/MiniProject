@@ -1,5 +1,5 @@
 """
-Pydantic schemas for GuardianShield API request/response models.
+Pydantic schemas for ScamGuard API request/response models.
 """
 
 from datetime import datetime

@@ -1,5 +1,5 @@
 """
-Data validation for GuardianShield datasets.
+Data validation for ScamGuard datasets.
 
 Uses pandera for schema-based validation of input DataFrames.
 Checks data quality, class distribution, and text statistics.
@@ -209,7 +209,7 @@ def save_schema(output_path: str | None = None) -> str:
         output_path = root / "data" / "schemas" / "message_schema.json"
 
     schema_dict = {
-        "dataset": "GuardianShield Thai SMS Spam Dataset",
+        "dataset": "ScamGuard Thai SMS Spam Dataset",
         "version": "1.0.0",
         "columns": {
             "message_id": {

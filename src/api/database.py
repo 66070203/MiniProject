@@ -1,5 +1,5 @@
 """
-SQLite database setup for GuardianShield API.
+SQLite database setup for ScamGuard API.
 
 Stores prediction logs and user feedback using SQLAlchemy.
 """
