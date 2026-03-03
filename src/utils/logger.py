@@ -3,7 +3,6 @@
 import logging
 import os
 import sys
-from pathlib import Path
 
 
 def get_logger(name: str, level: str | None = None) -> logging.Logger:

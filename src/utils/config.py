@@ -1,6 +1,5 @@
 """Configuration loader for ScamGuard."""
 
-import os
 from pathlib import Path
 from typing import Any
 

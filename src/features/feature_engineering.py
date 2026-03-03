@@ -45,7 +45,6 @@ class SignalFeatureExtractor(BaseEstimator, TransformerMixin):
 
     def transform(self, X) -> np.ndarray:
         if isinstance(X, pd.DataFrame):
-            available = [c for c in self.feature_cols if c in X.columns]
             missing = [c for c in self.feature_cols if c not in X.columns]
             if missing:
                 logger.warning(f"Missing signal columns (using 0): {missing}")

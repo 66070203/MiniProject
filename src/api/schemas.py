@@ -2,7 +2,6 @@
 Pydantic schemas for ScamGuard API request/response models.
 """
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator

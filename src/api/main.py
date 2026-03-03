@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting ScamGuard API...")
     init_db()
     try:
-        predictor = get_predictor()
+        get_predictor()  # warm-up: load model at startup
         logger.info("Model loaded successfully.")
     except FileNotFoundError as e:
         logger.warning(f"Model not found at startup: {e}. Will retry on first request.")

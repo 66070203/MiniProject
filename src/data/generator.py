@@ -6,7 +6,6 @@ reflecting common patterns that affect elderly Thai users.
 """
 
 import random
-import re
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path

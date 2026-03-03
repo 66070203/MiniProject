@@ -4,7 +4,6 @@ Pytest shared fixtures for ScamGuard tests.
 
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 import pandas as pd

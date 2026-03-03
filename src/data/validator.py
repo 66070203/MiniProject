@@ -13,7 +13,7 @@ import pandas as pd
 import pandera as pa
 from pandera import Check, Column, DataFrameSchema
 
-from src.utils.config import get_config, get_project_root
+from src.utils.config import get_project_root
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)

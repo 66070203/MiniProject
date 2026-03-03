@@ -4,7 +4,6 @@ API endpoint tests using FastAPI TestClient.
 Tests all endpoints with mocked model predictor so no trained model is required.
 """
 
-import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch

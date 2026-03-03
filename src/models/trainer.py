@@ -18,7 +18,6 @@ from typing import Any
 import joblib
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import (
     GradientBoostingClassifier,
@@ -26,10 +25,8 @@ from sklearn.ensemble import (
     VotingClassifier,
 )
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
 
-from src.data.preprocessor import preprocess_dataframe
 from src.features.feature_engineering import build_feature_pipeline
 from src.utils.config import get_config, get_project_root
 from src.utils.logger import get_logger
@@ -292,7 +289,6 @@ def run_training_pipeline(
     # Train individual models
     results = {}
     best_accuracy = 0.0
-    best_pipeline = None
 
     for name, clf in estimators:
         pipeline, acc, run_id = train_single_model(
@@ -301,7 +297,6 @@ def run_training_pipeline(
         results[name] = {"accuracy": acc, "run_id": run_id}
         if acc > best_accuracy:
             best_accuracy = acc
-            best_pipeline = pipeline
 
     # Train ensemble (always the final model)
     ensemble, ens_acc, ens_run_id = train_voting_ensemble(
