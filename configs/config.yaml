@@ -1,6 +1,6 @@
 project:
-  name: "GuardianShield"
-  name_thai: "ผู้พิทักษ์"
+  name: "ScamGuard"
+  name_thai: "สแกมการ์ด"
   version: "1.0.0"
   description: "AI-powered spam/phishing detection system for elderly users"
 
@@ -86,6 +86,7 @@ llm:
 
 mlflow:
   experiment_name: "guardianshield_spam_detection"
+  prediction_experiment: "prediction_logs"
   tracking_uri: "mlruns"
   registered_model_name: "guardianshield_ensemble"
 

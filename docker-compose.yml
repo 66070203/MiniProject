@@ -17,6 +17,7 @@ services:
       - LOG_LEVEL=INFO
       - DATABASE_URL=sqlite:///./guardianshield.db
       - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 30s
@@ -47,19 +48,19 @@ services:
   # MLflow Tracking Server
   # ─────────────────────────────────────────────────────────────────────────
   mlflow:
-    image: python:3.11-slim
+    image: ghcr.io/mlflow/mlflow:latest
     container_name: guardianshield-mlflow
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - ./mlruns:/mlflow/mlruns
-    command: ["bash", "-c", "pip install mlflow --quiet && mlflow server --backend-store-uri /mlflow/mlruns --default-artifact-root /mlflow/mlruns --host 0.0.0.0 --port 5000"]
+    command: ["mlflow", "server", "--backend-store-uri", "/mlflow/mlruns", "--default-artifact-root", "/mlflow/mlruns", "--host", "0.0.0.0", "--port", "5000"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 20s
     restart: unless-stopped
 
 volumes:

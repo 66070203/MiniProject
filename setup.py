@@ -1,11 +1,11 @@
-"""GuardianShield package setup."""
+"""ScamGuard package setup."""
 from setuptools import setup, find_packages
 
 setup(
-    name="guardianshield",
+    name="scamguard",
     version="1.0.0",
     description="AI-powered spam/phishing detection for elderly users",
-    author="GuardianShield Team",
+    author="ScamGuard Team",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     python_requires=">=3.10",

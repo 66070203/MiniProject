@@ -118,3 +118,50 @@ class StatsResponse(BaseModel):
     spam_rate: float
     phishing_rate: float
     feedback_count: int
+
+
+# ---------------------------------------------------------------------------
+# Chat schemas
+# ---------------------------------------------------------------------------
+
+
+class ChatMessage(BaseModel):
+    """ข้อความเดียวในประวัติการสนทนา"""
+
+    role: str = Field(..., description="'user' หรือ 'assistant'")
+    content: str = Field(..., min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    """Request body for the /chat endpoint."""
+
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="คำถามหรือข้อความจากผู้ใช้",
+        examples=["ฟิชชิ่งคืออะไร", "ถ้าถูกหลอกให้โอนเงินแล้วควรทำอย่างไร"],
+    )
+    history: list[ChatMessage] = Field(
+        default_factory=list,
+        description="ประวัติการสนทนาก่อนหน้า (สูงสุด 10 รอบ)",
+    )
+    user_id: Optional[str] = Field(default=None, max_length=100)
+
+    @field_validator("message")
+    @classmethod
+    def message_must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("message must not be blank")
+        return v.strip()
+
+
+class ChatResponse(BaseModel):
+    """Response from the /chat endpoint."""
+
+    reply: str = Field(..., description="คำตอบจาก AI")
+    source: str = Field(
+        default="llm",
+        description="แหล่งที่มาของคำตอบ: 'llm', 'faq', หรือ 'fallback'",
+    )
+    timestamp: str = Field(..., description="เวลาที่ตอบ (ISO 8601 UTC)")

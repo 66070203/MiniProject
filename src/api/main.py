@@ -19,14 +19,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from src.api.chatbot import get_chatbot
 from src.api.database import (get_session, get_stats, init_db, log_feedback,
                               log_prediction)
-from src.api.schemas import (FeedbackRequest, FeedbackResponse, HealthResponse,
+from src.api.schemas import (ChatRequest, ChatResponse, FeedbackRequest,
+                             FeedbackResponse, HealthResponse,
                              ModelInfoResponse, PredictRequest,
                              PredictResponse, StatsResponse)
 from src.models.predictor import get_predictor
 from src.utils.config import get_config
 from src.utils.logger import get_logger
+from src.utils.mlflow_logger import log_prediction_to_mlflow
 
 logger = get_logger(__name__)
 cfg = get_config()
@@ -144,7 +147,13 @@ async def predict(request: PredictRequest, db: Session = Depends(get_session)):
     try:
         log_prediction(db, request.text, result, user_id=request.user_id)
     except Exception as e:
-        logger.warning(f"Failed to log prediction: {e}")
+        logger.warning(f"Failed to log prediction to DB: {e}")
+
+    # Log prediction to MLflow (non-blocking — failures are silently ignored)
+    try:
+        log_prediction_to_mlflow(request.text, result, user_id=request.user_id)
+    except Exception as e:
+        logger.warning(f"Failed to log prediction to MLflow: {e}")
 
     return PredictResponse(**result)
 
@@ -186,6 +195,25 @@ async def statistics(db: Session = Depends(get_session)):
         logger.error(f"Stats error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     return StatsResponse(**stats)
+
+
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
+async def chat(request: ChatRequest):
+    """
+    ถามตอบเกี่ยวกับสแปม ฟิชชิ่ง วิธีรับมือ และวิธีแก้ไขเมื่อถูกหลอก
+
+    รองรับการสนทนาต่อเนื่องผ่าน history field
+    ใช้ Groq LLM เป็นหลัก พร้อม FAQ fallback เมื่อไม่มี API key
+    """
+    try:
+        chatbot = get_chatbot()
+        history = [msg.model_dump() for msg in request.history]
+        result = chatbot.chat(message=request.message, history=history)
+    except Exception as exc:
+        logger.error(f"Chat error: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(exc)}")
+
+    return ChatResponse(**result)
 
 
 @app.get("/", tags=["System"])
