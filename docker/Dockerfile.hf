@@ -1,0 +1,32 @@
+# GuardianShield — HuggingFace Spaces Deployment
+# Single image: runs Streamlit with embedded model (no separate API needed)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Download PyThaiNLP corpus
+RUN python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
+
+COPY app/ ./app/
+COPY src/ ./src/
+COPY configs/ ./configs/
+COPY models/ ./models/
+
+ENV PYTHONPATH=/app
+ENV LOG_LEVEL=INFO
+# HuggingFace Spaces: no API server, use local predictor
+ENV API_URL=local
+
+# HuggingFace Spaces runs on port 7860
+EXPOSE 7860
+
+CMD ["streamlit", "run", "app/streamlit_app.py", \
+     "--server.port=7860", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--browser.gatherUsageStats=false"]

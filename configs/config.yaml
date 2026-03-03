@@ -1,0 +1,102 @@
+project:
+  name: "GuardianShield"
+  name_thai: "ผู้พิทักษ์"
+  version: "1.0.0"
+  description: "AI-powered spam/phishing detection system for elderly users"
+
+paths:
+  data_raw: "data/raw"
+  data_processed: "data/processed"
+  data_external: "data/external"
+  data_schemas: "data/schemas"
+  models: "models"
+  mlruns: "mlruns"
+  logs: "logs"
+
+data:
+  synthetic_file: "thai_synthetic_spam.csv"
+  uci_file: "uci_sms_spam.csv"
+  train_file: "train.csv"
+  val_file: "val.csv"
+  test_file: "test.csv"
+  labels:
+    ham: 0
+    spam: 1
+    phishing: 2
+  label_names: ["ham", "spam", "phishing"]
+  split:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  random_state: 42
+
+synthetic:
+  n_ham: 4500
+  n_spam: 2000
+  n_phishing: 1500
+
+preprocessing:
+  max_text_length: 500
+  min_text_length: 5
+  thai_engine: "newmm"
+  remove_stopwords: true
+
+features:
+  tfidf:
+    max_features: 5000
+    ngram_range: [1, 2]
+    min_df: 2
+    max_df: 0.95
+    sublinear_tf: true
+  extra_features:
+    - text_length
+    - word_count
+    - url_count
+    - phone_count
+    - exclamation_count
+    - number_ratio
+    - caps_ratio
+
+models:
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    class_weight: "balanced"
+    solver: "lbfgs"
+  random_forest:
+    n_estimators: 200
+    max_depth: null
+    class_weight: "balanced"
+    n_jobs: -1
+    random_state: 42
+  gradient_boosting:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    random_state: 42
+  voting:
+    voting: "soft"
+    weights: [2, 1, 2]
+
+llm:
+  enabled: true
+  model: "llama-3.3-70b-versatile"
+  confidence_threshold: 0.80
+  timeout_seconds: 10
+
+mlflow:
+  experiment_name: "guardianshield_spam_detection"
+  tracking_uri: "mlruns"
+  registered_model_name: "guardianshield_ensemble"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  title: "GuardianShield API"
+  description: "Spam and phishing detection API for elderly users"
+  version: "1.0.0"
+  db_url: "sqlite:///./guardianshield.db"
+
+streamlit:
+  port: 8501
+  api_url: "http://localhost:8000"

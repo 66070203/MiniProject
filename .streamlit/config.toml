@@ -1,0 +1,9 @@
+[client]
+# Hide the Deploy button and 3-dot hamburger menu from the top-right toolbar
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true

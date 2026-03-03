@@ -1,0 +1,31 @@
+# GuardianShield FastAPI Backend
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for PyThaiNLP
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Download PyThaiNLP corpus on build
+RUN python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
+
+# Copy source code
+COPY src/ ./src/
+COPY configs/ ./configs/
+COPY models/ ./models/
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV LOG_LEVEL=INFO
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

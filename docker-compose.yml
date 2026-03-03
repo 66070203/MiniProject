@@ -1,0 +1,70 @@
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # FastAPI Backend
+  # ─────────────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: guardianshield-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data:ro
+      - ./logs:/app/logs
+    environment:
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=sqlite:///./guardianshield.db
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Streamlit Frontend
+  # ─────────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    container_name: guardianshield-app
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+      - LOG_LEVEL=INFO
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MLflow Tracking Server
+  # ─────────────────────────────────────────────────────────────────────────
+  mlflow:
+    image: python:3.11-slim
+    container_name: guardianshield-mlflow
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: ["bash", "-c", "pip install mlflow --quiet && mlflow server --backend-store-uri /mlflow/mlruns --default-artifact-root /mlflow/mlruns --host 0.0.0.0 --port 5000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  logs:
+
+networks:
+  default:
+    name: guardianshield-network
