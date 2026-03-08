@@ -44,7 +44,7 @@ docker compose up -d
 |--------|-----|
 | หน้าเว็บ (Streamlit) | http://localhost:8501 |
 | API | http://localhost:8000/docs |
-| MLflow | http://localhost:5001 |
+| MLflow | http://localhost:5000 |
 
 ---
 
