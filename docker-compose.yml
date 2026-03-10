@@ -8,7 +8,7 @@ services:
       dockerfile: docker/Dockerfile.api
     container_name: scamguard-api
     ports:
-      - "8000:8000"
+      - "80:80"
     volumes:
       - ./models:/app/models:ro
       - ./data:/app/data:ro
@@ -19,7 +19,7 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:80/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,7 +37,7 @@ services:
     ports:
       - "8501:8501"
     environment:
-      - API_URL=http://api:8000
+      - API_URL=http://api:80
       - LOG_LEVEL=INFO
     depends_on:
       api:

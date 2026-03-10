@@ -53,7 +53,7 @@ docker compose up -d
 | บริการ | URL |
 |--------|-----|
 | หน้าเว็บ (Streamlit) | http://localhost:8501 |
-| API | http://localhost:8000/docs |
+| API | http://localhost/docs |
 | MLflow | http://localhost:5000 |
 
 ---
@@ -65,7 +65,7 @@ docker compose up -d
 **Terminal 1 — API:**
 ```bash
 set GROQ_API_KEY=ใส่ key ที่นี่
-uvicorn src.api.main:app --reload --port 8000
+uvicorn src.api.main:app --reload --port 80
 ```
 
 **Terminal 2 — หน้าเว็บ:**
@@ -85,7 +85,7 @@ mlflow server --backend-store-uri mlruns --host 0.0.0.0 --port 5001
 ส่ง POST request ไปที่ `/predict`:
 
 ```bash
-curl -X POST http://localhost:8000/predict \
+curl -X POST http://localhost/predict \
   -H "Content-Type: application/json" \
   -d '{"text": "ยินดีด้วย! คุณได้รับรางวัล 100,000 บาท กดลิงก์เพื่อรับ: bit.ly/claim"}'
 ```
@@ -149,7 +149,7 @@ LINE_CHANNEL_ACCESS_TOKEN=<channel access token>
 
 > **Local development:** ใช้ [ngrok](https://ngrok.com) เพื่อให้ LINE เข้าถึง localhost ได้
 > ```bash
-> ngrok http 8000
+> ngrok http 80
 > # จะได้ URL เช่น https://xxxx.ngrok.io → ใช้ https://xxxx.ngrok.io/line/callback
 > ```
 
