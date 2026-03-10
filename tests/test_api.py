@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-# Mock predictor result used across tests
+# Mock predictor result used across tests — mirrors the full dict from GuardianPredictor.predict()
 MOCK_PREDICT_RESULT = {
     "label": "spam",
     "label_th": "สแปม",
@@ -25,22 +25,30 @@ MOCK_PREDICT_RESULT = {
     "keywords": ["รางวัล", "กด"],
     "processing_time_ms": 15.2,
     "probabilities": {"ham": 0.05, "spam": 0.92, "phishing": 0.03},
+    "confidence_source": "ml",
+    "llm_explanation": None,
 }
 
 
 @pytest.fixture(scope="module")
 def client():
-    """Create FastAPI TestClient with mocked predictor and DB."""
+    """Create FastAPI TestClient with mocked predictor and isolated in-memory DB.
+
+    The lifespan's init_db() call is patched out so it does not overwrite the
+    in-memory database that is set up here for test isolation.
+    """
     from fastapi.testclient import TestClient
 
     from src.api import database
     from src.api.main import app
 
-    # Initialize in-memory test DB
+    # Set up in-memory SQLite DB before the lifespan runs
     database.init_db("sqlite:///:memory:")
 
-    with TestClient(app, raise_server_exceptions=False) as c:
-        yield c
+    # Patch init_db in main so the lifespan's call is a no-op (preserves in-memory DB)
+    with patch("src.api.main.init_db"):
+        with TestClient(app, raise_server_exceptions=False) as c:
+            yield c
 
 
 @pytest.fixture(autouse=True)
