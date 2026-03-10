@@ -101,6 +101,20 @@ jobs:
     # Only deploy on direct pushes to main — not on pull requests
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - name: Check required secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.GCP_HOST }}"         ] && missing="$missing\n  - GCP_HOST"
+          [ -z "${{ secrets.GCP_USER }}"         ] && missing="$missing\n  - GCP_USER"
+          [ -z "${{ secrets.GCP_SSH_KEY }}"      ] && missing="$missing\n  - GCP_SSH_KEY"
+          [ -z "${{ secrets.GCP_APP_PATH }}"     ] && missing="$missing\n  - GCP_APP_PATH"
+          [ -z "${{ secrets.GROQ_API_KEY }}"     ] && missing="$missing\n  - GROQ_API_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets. Add them in Settings → Secrets and variables → Actions:$missing"
+            exit 1
+          fi
+          echo "All required secrets are present."
+
       - name: SSH into GCP VM and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
