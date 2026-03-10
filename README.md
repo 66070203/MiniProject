@@ -9,6 +9,7 @@
 - Python 3.11+
 - Docker Desktop (สำหรับรันแบบ container)
 - Groq API Key — สมัครฟรีได้ที่ [console.groq.com](https://console.groq.com)
+- LINE Messaging API Channel — สร้างได้ที่ [developers.line.biz](https://developers.line.biz) (ถ้าต้องการใช้ LINE Bot)
 
 ---
 
@@ -24,12 +25,22 @@ python -m src.data.ingestion      # แบ่ง train/val/test
 python -m src.models.trainer      # เทรนโมเดล (~2-3 นาที)
 ```
 
-### 2. ตั้งค่า API Key
+### 2. ตั้งค่า API Keys
 
-สร้างไฟล์ `.env` ในโฟลเดอร์ `scamguard/`:
+สร้างไฟล์ `.env` (copy จาก `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+แก้ไขค่าใน `.env`:
 
 ```
 GROQ_API_KEY=ใส่ key ที่ได้จาก console.groq.com ตรงนี้
+
+# LINE Bot (ไม่บังคับ — ข้ามได้ถ้าไม่ใช้)
+LINE_CHANNEL_SECRET=ใส่ channel secret ตรงนี้
+LINE_CHANNEL_ACCESS_TOKEN=ใส่ channel access token ตรงนี้
 ```
 
 ### 3. รัน Docker
@@ -103,6 +114,56 @@ curl -X POST http://localhost:8000/predict \
   "confidence_source": "hybrid",
   "llm_explanation": "ข้อความแจ้งเตือนดอกเบี้ยจากธนาคาร ไม่มีการขอข้อมูลส่วนตัวหรือลิงก์น่าสงสัย"
 }
+```
+
+---
+
+## ตั้งค่า LINE Bot (ไม่บังคับ)
+
+ScamGuard รองรับ LINE Messaging API — ผู้ใช้ส่งข้อความมาที่บอทแล้วได้รับผลวิเคราะห์กลับเป็นภาษาไทยทันที
+
+### 1. สร้าง LINE Messaging API Channel
+
+1. ไปที่ [developers.line.biz](https://developers.line.biz) → **Console**
+2. สร้าง Provider → สร้าง Channel ประเภท **Messaging API**
+3. เข้าไปที่ Channel → **Messaging API** tab
+4. คัดลอก **Channel secret** (จาก Basic settings) และ **Channel access token** (กด Issue)
+
+### 2. ใส่ credentials ใน `.env`
+
+```
+LINE_CHANNEL_SECRET=<channel secret>
+LINE_CHANNEL_ACCESS_TOKEN=<channel access token>
+```
+
+### 3. เปิดใช้งาน Webhook
+
+ใน LINE Developers Console → **Messaging API** tab:
+
+1. เปิด **Use webhook** → ON
+2. ใส่ Webhook URL:
+   ```
+   https://<your-domain>/line/callback
+   ```
+3. กด **Verify** — ต้องได้ `200 OK`
+4. ปิด **Auto-reply messages** และ **Greeting messages** (ไม่งั้นบอทตอบซ้ำ)
+
+> **Local development:** ใช้ [ngrok](https://ngrok.com) เพื่อให้ LINE เข้าถึง localhost ได้
+> ```bash
+> ngrok http 8000
+> # จะได้ URL เช่น https://xxxx.ngrok.io → ใช้ https://xxxx.ngrok.io/line/callback
+> ```
+
+### ตัวอย่างการตอบกลับของบอท
+
+```
+🚨 ฟิชชิ่ง (หลอกลวง) | ความเสี่ยง: สูงมาก (98%)
+
+พบคำที่ใช้หลอกลวง: รางวัล | พบลิงก์ URL ในข้อความ
+
+⚠️ คำเตือน: รางวัล, URL
+
+📞 โทร 1599 สายด่วนไซเบอร์ (ฟรี 24 ชม.)
 ```
 
 ---
