@@ -72,17 +72,7 @@ def _format_reply(result: dict) -> str:
     keywords = result.get("keywords", [])
     llm_explanation = result.get("llm_explanation")
 
-    if label == "ham":
-        lines = [
-            f"ข้อความนี้ปลอดภัยเลยค่ะ ไม่มีอะไรน่าเป็นห่วงเลย (มั่นใจ {confidence_pct}%)",
-            "",
-            explanation,
-        ]
-        if llm_explanation:
-            lines += ["", llm_explanation]
-        lines += ["", "ถ้ามีข้อความไหนสงสัย ส่งมาให้นุ้งดูได้เลยนะคะ"]
-
-    elif label == "spam":
+    if label == "spam":
         lines = [
             f"อุ๊ย! ข้อความนี้เป็นสแปมเลยค่ะ ระวังด้วยนะ (มั่นใจ {confidence_pct}%)",
             "",
@@ -197,19 +187,23 @@ async def _handle_text_message(event: MessageEvent) -> None:
     )
 
     # --- classify with ScamGuard predictor ---
+    reply_text: str | None = None
     try:
         predictor = get_predictor()
         result = predictor.predict(user_text, user_id=user_id)
-        reply_text = _format_reply(result)
+        if result.get("label") in ("spam", "phishing"):
+            reply_text = _format_reply(result)
+        else:
+            logger.info("LINE message classified as safe — no reply sent")
     except FileNotFoundError:
         logger.error("Model not loaded — cannot classify LINE message")
-        reply_text = (
-            "ขออภัย ระบบยังไม่พร้อมใช้งาน กรุณาลองใหม่อีกครั้งในภายหลัง\n"
-            "Sorry, the model is not ready. Please try again later."
-        )
+        reply_text = "ขออภัยนะคะ ตอนนี้ระบบยังไม่พร้อม ลองส่งมาใหม่อีกทีได้เลยค่ะ"
     except Exception as exc:
         logger.error("Prediction error for LINE message: %s", exc, exc_info=True)
-        reply_text = "ขออภัย เกิดข้อผิดพลาดในการวิเคราะห์ข้อความ กรุณาลองใหม่อีกครั้ง"
+        reply_text = "ขออภัยนะคะ เกิดข้อผิดพลาดในการวิเคราะห์ข้อความ ลองใหม่อีกครั้งได้เลยค่ะ"
+
+    if reply_text is None:
+        return
 
     # --- send reply ---
     try:
