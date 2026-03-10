@@ -1,13 +1,15 @@
 """
-ScamGuard — Streamlit Frontend
-ระบบตรวจจับข้อความสแปมและฟิชชิ่งสำหรับผู้สูงอายุ
+ScamGuard — Streamlit Frontend (Elderly-Friendly Redesign)
+ระบบตรวจสอบอีเมลและข้อความต้องสงสัย
 
-Elderly-friendly design:
-  - Large Thai/English fonts
-  - High contrast colors
-  - Simple interaction flow
-  - Clear visual indicators (🟢🟡🔴)
-  - Bilingual support (Thai / English)
+Redesign goals (Senior Citizens 55+):
+  - Font size minimum 20px throughout
+  - Maximum 3-step flow
+  - No technical jargon
+  - Large buttons & high-contrast colors
+  - Clear, plain-language result cards
+  - Phishing education section on main page
+  - Bilingual: Thai / English
 """
 
 import os
@@ -18,7 +20,6 @@ from pathlib import Path
 import requests
 import streamlit as st
 
-# Add project root to path when running standalone
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -29,379 +30,415 @@ API_URL = os.environ.get("API_URL", "http://localhost")
 APP_VERSION = "1.0.0"
 
 # ---------------------------------------------------------------------------
-# Bilingual text dictionary
+# Bilingual text dictionary (plain-language, jargon-free)
 # ---------------------------------------------------------------------------
 CHAT_QUICK_QUESTIONS: dict = {
     "th": [
-        "สแปมคืออะไร?",
-        "ฟิชชิ่งคืออะไร?",
-        "สังเกตข้อความอันตรายอย่างไร?",
-        "ถูกหลอกให้โอนเงินแล้วทำอย่างไร?",
+        "ข้อความไหนที่ต้องระวัง?",
+        "ถ้าถูกหลอกให้โอนเงินต้องทำอย่างไร?",
         "OTP คืออะไร ทำไมห้ามบอกใคร?",
-        "สายด่วนแจ้งเหตุมีเบอร์อะไรบ้าง?",
+        "สายด่วนแจ้งเหตุโทรที่ไหน?",
+        "อีเมลหลอกลวงหน้าตาเป็นอย่างไร?",
+        "ลิงก์อันตรายดูอย่างไร?",
     ],
     "en": [
-        "What is spam?",
-        "What is phishing?",
-        "How to spot dangerous messages?",
-        "I was scammed and sent money, what now?",
+        "Which messages should I watch out for?",
+        "I was scammed and sent money — what now?",
         "What is OTP and why should I never share it?",
-        "What emergency hotlines should I call?",
+        "What emergency hotline should I call?",
+        "What does a scam email look like?",
+        "How do I spot a dangerous link?",
     ],
 }
 
 TEXTS: dict = {
     "th": {
-        "page_title": "ScamGuard — ตรวจสอบข้อความ",
-        "sidebar_brand": "🛡️ ScamGuard",
-        "sidebar_version": f"v{APP_VERSION} — ระบบตรวจสอบข้อความ",
-        "stats_header": "### 📊 สถิติวันนี้",
-        "stats_checked": "ตรวจแล้ว",
-        "stats_danger": "พบอันตราย",
-        "history_header": "### 🕐 ประวัติการตรวจ",
-        "history_empty": "ยังไม่มีประวัติการตรวจ",
-        "clear_history": "🗑️ ล้างประวัติ",
-        "tips_header": "### 💡 วิธีสังเกตข้อความอันตราย",
-        "tips": [
-            "มีการเร่งรัดให้ทำอะไรบางอย่างทันที",
-            "มีลิงก์หรือหมายเลขโทรศัพท์แปลกๆ",
-            "มีรางวัลหรือเงินที่ไม่ได้สมัคร",
-            "ขอ OTP หรือรหัสส่วนตัว",
-            "อ้างชื่อธนาคารหรือหน่วยงานราชการ",
-            "ขู่ว่าบัญชีจะถูกระงับหรือปิด",
-        ],
-        "hotline_cyber": "📞 สายด่วนไซเบอร์: **1599**",
-        "hotline_bank": "📞 สายด่วนธนาคาร: โทรหลังบัตรโดยตรง",
+        # ── Page ──────────────────────────────────────────────────────────
+        "page_title": "ScamGuard — ตรวจสอบความปลอดภัย",
         "main_title": "🛡️ ScamGuard",
-        "subtitle": "ระบบตรวจสอบข้อความต้องสงสัย — ปกป้องคุณจากมิจฉาชีพออนไลน์",
-        # ── Usage guide ──────────────────────────────────────────────────
-        "guide_header": "📖 วิธีใช้งาน ScamGuard",
-        "guide_subtitle": "ทำตามขั้นตอนง่ายๆ 5 ขั้นตอน เพื่อตรวจสอบข้อความที่น่าสงสัย",
-        "guide_steps": [
-            {
-                "num": "1",
-                "icon": "📨",
-                "title": "รับข้อความที่น่าสงสัย",
-                "body": (
-                    "เมื่อท่านได้รับ <strong>SMS, LINE หรืออีเมล</strong> ที่ไม่แน่ใจ "
-                    "หรือดูน่าสงสัย เช่น แจ้งรางวัล แจ้งหนี้ หรือขอรหัส "
-                    "ให้หยุด <u>อย่าเพิ่งตอบหรือกดอะไร</u> ก่อนตรวจสอบ"
-                ),
-            },
-            {
-                "num": "2",
-                "icon": "📋",
-                "title": "คัดลอกข้อความนั้น",
-                "body": (
-                    "กดค้างที่ข้อความในโทรศัพท์ของท่าน จนกว่าจะมีเมนูขึ้นมา "
-                    'แล้วเลือก <strong>"คัดลอก"</strong> หรือ <strong>"Copy"</strong> '
-                    "<br>หากเป็นอีเมล ให้ลากคลุมข้อความทั้งหมด แล้วกด Ctrl+C (บนคอมพิวเตอร์)"
-                ),
-            },
-            {
-                "num": "3",
-                "icon": "📝",
-                "title": "วางข้อความในกล่องด้านล่าง",
-                "body": (
-                    "กดค้างในกล่องสี่เหลี่ยมสีขาวที่เขียนว่า "
-                    '<em>"วางข้อความ SMS, LINE หรืออีเมลที่น่าสงสัยที่นี่..."</em> '
-                    'แล้วเลือก <strong>"วาง"</strong> หรือ <strong>"Paste"</strong> '
-                    "<br>บนคอมพิวเตอร์ สามารถกด <strong>Ctrl+V</strong> ได้เลย"
-                ),
-            },
-            {
-                "num": "4",
-                "icon": "🔍",
-                "title": 'กดปุ่ม "ตรวจสอบข้อความ"',
-                "body": (
-                    "กดปุ่มสีน้ำเงินขนาดใหญ่ <strong>🔍 ตรวจสอบข้อความ</strong> ด้านล่างกล่อง "
-                    "รอสักครู่ (ไม่เกิน 5 วินาที) ระบบ AI จะวิเคราะห์ข้อความให้อัตโนมัติ"
-                ),
-            },
-            {
-                "num": "5",
-                "icon": "📊",
-                "title": "อ่านผลการตรวจสอบ",
-                "body": (
-                    "<span class='guide-result-safe'>✅ กรอบสีเขียว = ข้อความปลอดภัย</span> "
-                    "ไม่ต้องกังวล สามารถตอบหรืออ่านได้ตามปกติ<br><br>"
-                    "<span class='guide-result-warn'>⚠️ กรอบสีส้ม = สแปม (ขยะ)</span> "
-                    "ข้อความรบกวน ไม่ต้องตอบ ลบทิ้งได้เลย<br><br>"
-                    "<span class='guide-result-danger'>🚨 กรอบสีแดง = อันตราย (ฟิชชิ่ง)</span> "
-                    "ข้อความหลอกลวง <u>อย่าตอบสนองใดๆ</u> ทั้งสิ้น"
-                ),
-            },
-            {
-                "num": "6",
-                "icon": "🚔",
-                "title": "ถ้าพบว่าอันตราย — ทำอย่างนี้",
-                "body": (
-                    "🚫 <strong>อย่ากดลิงก์</strong> ในข้อความเด็ดขาด<br>"
-                    "🚫 <strong>อย่าโทรตามเบอร์</strong> ที่ส่งมา<br>"
-                    "🚫 <strong>อย่าบอกรหัส OTP</strong> หรือรหัสผ่านใครทั้งนั้น<br>"
-                    "📞 โทรแจ้ง <strong>สายด่วนไซเบอร์ 1599</strong> ได้ทันที (ฟรี 24 ชม.)<br>"
-                    "👨‍👩‍👧 หรือ<strong>โทรหาลูกหลาน</strong>คนที่ไว้ใจได้เพื่อขอความช่วยเหลือ"
-                ),
-            },
-        ],
-        "guide_tip_box": (
-            "💡 <strong>เคล็ดลับ:</strong> หากข้อความนั้นมาจากคนที่รู้จักจริง "
-            "แต่ดูผิดปกติ ให้โทรถามคนนั้นโดยตรงก่อน อย่าส่งเงินหรือข้อมูลใดๆ "
-            "จนกว่าจะมั่นใจ 100%"
+        "subtitle": "ตรวจสอบอีเมลและข้อความต้องสงสัย — ปกป้องคุณจากมิจฉาชีพ",
+        # ── Tabs ──────────────────────────────────────────────────────────
+        "tab_check": "🔍  ตรวจสอบข้อความ",
+        "tab_tips": "📚  วิธีสังเกตมิจฉาชีพ",
+        "tab_chat": "💬  ถามตอบ AI",
+        # ── 3-step guide ──────────────────────────────────────────────────
+        "steps_header": "วิธีใช้งาน — 3 ขั้นตอนง่ายๆ",
+        "step1_num": "1",
+        "step1_icon": "📋",
+        "step1_title": "คัดลอกข้อความที่น่าสงสัย",
+        "step1_body": (
+            "กดค้างที่ข้อความ SMS, LINE หรืออีเมลที่ดูน่าสงสัย "
+            "แล้วเลือก <strong>\"คัดลอก\"</strong> หรือ <strong>\"Copy\"</strong>"
         ),
-        # ─────────────────────────────────────────────────────────────────
-        "input_header": "### 📩 วางข้อความที่ต้องการตรวจสอบ",
+        "step2_num": "2",
+        "step2_icon": "📝",
+        "step2_title": "วางข้อความในช่องด้านล่าง",
+        "step2_body": (
+            "กดค้างในช่องข้อความด้านล่าง แล้วเลือก <strong>\"วาง\"</strong> หรือ <strong>\"Paste\"</strong> "
+            "จากนั้นกดปุ่ม <strong>\"ตรวจสอบความปลอดภัย\"</strong>"
+        ),
+        "step3_num": "3",
+        "step3_icon": "🔍",
+        "step3_title": "ดูผลการตรวจสอบ",
+        "step3_body": (
+            "ระบบจะแสดงผลทันทีว่าข้อความนั้น "
+            "<strong style='color:#2e7d32'>ปลอดภัย</strong>, "
+            "<strong style='color:#e65100'>น่าสงสัย</strong> หรือ "
+            "<strong style='color:#c62828'>อันตราย</strong>"
+        ),
+        # ── Input section ─────────────────────────────────────────────────
+        "input_header": "### 📨 วางข้อความที่ต้องการตรวจสอบที่นี่",
         "input_placeholder": (
-            "วางข้อความ SMS, LINE, หรืออีเมลที่น่าสงสัยที่นี่...\n\n"
-            "ตัวอย่าง: ยินดีด้วยคุณได้รับรางวัล 50,000 บาท กดลิงก์เพื่อรับรางวัล bit.ly/claim"
+            "วางข้อความที่ได้รับที่นี่...\n\n"
+            "เช่น: \"ท่านได้รับรางวัล 50,000 บาท กรุณากดลิงก์นี้เพื่อรับรางวัล\""
         ),
         "examples_expander": "📋 ดูตัวอย่างข้อความสำหรับทดสอบ",
-        "examples_header": "**ตัวอย่างข้อความ (คลิกเพื่อคัดลอก):**",
         "examples": {
             "⚠️ สแปมรางวัล": "ยินดีด้วยคุณได้รับรางวัล 100,000 บาท กดลิงก์เพื่อรับรางวัลก่อนหมดเวลา: bit.ly/reward-th",
             "🚨 ฟิชชิ่งธนาคาร": "แจ้งเตือนจากธนาคารกสิกรไทย บัญชีของท่านพบรายการผิดปกติ กรุณายืนยัน OTP: 456789 ภายใน 5 นาที",
             "🚨 ฟิชชิ่งตำรวจ": "เจ้าหน้าที่ตำรวจไซเบอร์แจ้ง บัญชีของท่านเกี่ยวข้องกับคดีฟอกเงิน โทร 062-345-6789 ทันที",
             "✅ ข้อความปกติ": "สวัสดีครับ วันนี้จะกลับบ้านช้าหน่อย รอหน่อยนะครับ",
         },
-        "btn_analyze": "🔍 ตรวจสอบข้อความ",
-        "btn_analyze_help": "กดเพื่อวิเคราะห์ข้อความด้วย AI",
-        "btn_clear": "🗑️ ล้าง",
-        "warn_empty": "⚠️ กรุณาพิมพ์หรือวางข้อความที่ต้องการตรวจสอบก่อน",
-        "spinner": "🔄 กำลังวิเคราะห์ข้อความ...",
-        "result_header": "### 🔎 ผลการตรวจสอบ",
-        "result_reason_label": "📝 <strong>เหตุผล:</strong>",
-        "metric_confidence": "ความเชื่อมั่น",
-        "metric_risk": "ระดับความเสี่ยง",
-        "metric_time": "เวลาประมวลผล",
-        "keywords_label": "**🔑 คำสำคัญที่พบ:**",
-        "prob_expander": "📊 ดูรายละเอียดความน่าจะเป็น",
-        "prob_labels": [
-            ("ham", "ปกติ", "✅"),
-            ("spam", "สแปม", "⚠️"),
-            ("phishing", "ฟิชชิ่ง", "🚨"),
-        ],
-        "label_map": {"ham": "ข้อความปกติ", "spam": "สแปม", "phishing": "ฟิชชิ่ง"},
-        "safety_warning": (
-            "**⚠️ คำแนะนำด้านความปลอดภัย:**\n"
-            "- 🚫 อย่ากดลิงก์หรือโทรไปยังหมายเลขในข้อความ\n"
-            "- 🚫 อย่าให้ข้อมูลส่วนตัว รหัส OTP หรือรหัสผ่านใดๆ\n"
-            "- 📞 หากสงสัย ให้โทรหาลูกหลานหรือคนที่ไว้ใจได้ก่อน\n"
-            "- 🚔 แจ้งความได้ที่สายด่วน 1599 (ตำรวจไซเบอร์)"
+        "btn_analyze": "🔍  ตรวจสอบความปลอดภัย",
+        "btn_analyze_help": "คลิกเพื่อตรวจสอบว่าข้อความนี้ปลอดภัยหรือไม่",
+        "btn_clear": "🗑️  ล้างข้อความ",
+        "spinner": "กำลังตรวจสอบ กรุณารอสักครู่...",
+        "warn_empty": "⚠️ กรุณาวางข้อความที่ต้องการตรวจสอบก่อน",
+        "err_timeout": "⏱️ ระบบตอบสนองช้า กรุณาลองใหม่อีกครั้ง",
+        "err_no_model": "❌ ไม่พบโมเดล กรุณาติดต่อผู้ดูแลระบบ",
+        # ── Result section ────────────────────────────────────────────────
+        "result_header": "### 📊 ผลการตรวจสอบ",
+        "result_safe_title": "✅  ข้อความนี้ปลอดภัย",
+        "result_spam_title": "⚠️  ข้อความนี้น่าสงสัย",
+        "result_phishing_title": "🚨  ข้อความนี้อันตราย!",
+        "result_safe_msg": (
+            "ระบบไม่พบสัญญาณของมิจฉาชีพในข้อความนี้ "
+            "แต่ควรระวังเสมอ หากไม่แน่ใจให้ถามคนในครอบครัว"
         ),
-        "feedback_header": "**💬 ผลลัพธ์ไม่ถูกต้องหรือไม่?**",
+        "result_spam_msg": (
+            "ข้อความนี้มีลักษณะที่น่าสงสัย อาจเป็นการโฆษณาหรือข้อความรบกวน "
+            "<strong>ไม่ควรกดลิงก์หรือโทรตามเบอร์ที่ให้มา</strong>"
+        ),
+        "result_phishing_msg": (
+            "ข้อความนี้อาจพยายาม <strong>ขโมยข้อมูลส่วนตัว</strong> หรือ "
+            "<strong>หลอกให้โอนเงิน</strong> "
+            "ห้ามกดลิงก์ ห้ามโทรตาม และห้ามให้รหัส OTP หรือรหัสผ่านใดๆ"
+        ),
+        "result_reason_label": "เหตุผล:",
+        "result_keywords_label": "คำที่พบในข้อความ:",
+        "result_action_safe": "💡 หากยังไม่แน่ใจ ลองถามลูกหลานหรือคนใกล้ชิดก่อน",
+        "result_action_danger": (
+            "🆘 หากถูกหลอกลวงไปแล้ว โทรแจ้ง <strong>สายด่วนไซเบอร์ 1599</strong> ได้ทันที (ฟรี 24 ชม.)"
+        ),
+        # ── Education tips tab ────────────────────────────────────────────
+        "tips_page_header": "## 📚 วิธีสังเกตอีเมลและข้อความหลอกลวง",
+        "tips_intro": (
+            "มิจฉาชีพมักส่งข้อความที่ดูเหมือนมาจากธนาคาร หน่วยงานราชการ "
+            "หรือบริษัทที่น่าเชื่อถือ เพื่อหลอกเอาข้อมูลส่วนตัวหรือเงิน "
+            "สังเกตสัญญาณเตือนเหล่านี้:"
+        ),
+        "warning_signs": [
+            {
+                "icon": "⏰",
+                "title": "เร่งรัดให้ทำทันที",
+                "body": (
+                    "\"ด่วน!\", \"วันนี้วันสุดท้าย\", \"บัญชีจะถูกปิดใน 24 ชั่วโมง\" "
+                    "— มิจฉาชีพกดดันให้รีบทำโดยไม่ทันคิด"
+                ),
+            },
+            {
+                "icon": "🎁",
+                "title": "รางวัลหรือเงินที่ไม่ได้สมัคร",
+                "body": (
+                    "\"คุณได้รับรางวัล 100,000 บาท\" หรือ \"คุณถูกเลือกเป็นผู้โชคดี\" "
+                    "— ของที่ได้มาง่ายๆ มักไม่มีจริง"
+                ),
+            },
+            {
+                "icon": "🔐",
+                "title": "ขอรหัส OTP หรือรหัสผ่าน",
+                "body": (
+                    "ธนาคารและหน่วยงานราชการที่แท้จริง <strong>จะไม่มีวันขอรหัส OTP</strong> "
+                    "หรือรหัสผ่านจากคุณทางโทรศัพท์หรือข้อความ"
+                ),
+            },
+            {
+                "icon": "🔗",
+                "title": "ลิงก์หรือเบอร์โทรแปลกๆ",
+                "body": (
+                    "ลิงก์ที่มีตัวเลขและอักขระแปลกๆ เช่น bit.ly/... หรือ "
+                    "เบอร์โทรที่ไม่ใช่เบอร์ทางการของธนาคาร — ห้ามกดหรือโทรตาม"
+                ),
+            },
+            {
+                "icon": "🏦",
+                "title": "อ้างชื่อธนาคารหรือราชการ",
+                "body": (
+                    "\"ธนาคารกรุงเทพ\", \"กรมสรรพากร\", \"ตำรวจไซเบอร์\" "
+                    "— หากสงสัย ให้โทรหาหน่วยงานนั้นโดยตรงด้วยเบอร์ที่รู้จัก ไม่ใช่เบอร์ในข้อความ"
+                ),
+            },
+            {
+                "icon": "😰",
+                "title": "ข่มขู่หรือทำให้กลัว",
+                "body": (
+                    "\"คุณมีหมายศาล\", \"บัญชีถูกแฮก\", \"ต้องชำระเงินหรือจะถูกจับ\" "
+                    "— มิจฉาชีพใช้ความกลัวทำให้คิดไม่ออก"
+                ),
+            },
+        ],
+        "tips_hotline_header": "### 📞 หมายเลขฉุกเฉิน",
+        "tips_hotlines": [
+            {"icon": "🆘", "label": "สายด่วนไซเบอร์", "number": "1599", "note": "ฟรี 24 ชั่วโมง"},
+            {"icon": "🏦", "label": "ศูนย์แจ้งระงับธุรกรรม", "number": "1166", "note": "กรณีโอนเงินผิด"},
+            {"icon": "👮", "label": "แจ้งความออนไลน์", "number": "1441", "note": "กองบัญชาการตำรวจสืบสวนฯ"},
+        ],
+        # ── Chatbot ───────────────────────────────────────────────────────
+        "chat_quick_header": "#### คำถามยอดนิยม — กดเพื่อถามได้เลย",
+        "chat_empty": "พิมพ์คำถามในช่องด้านล่าง หรือเลือกคำถามจากด้านบน",
+        "chat_input_placeholder": "พิมพ์คำถามของท่านที่นี่...",
+        "chat_clear_btn": "🗑️  ล้างการสนทนา",
+        "chat_thinking": "กำลังคิดคำตอบ...",
+        "chat_you": "คุณ",
+        "chat_bot": "น้องการ์ด (ScamGuard AI)",
+        "chat_err_empty": "⚠️ กรุณาพิมพ์คำถามก่อน",
+        "chat_err_fail": "⏱️ ไม่สามารถเชื่อมต่อได้ในขณะนี้ กรุณาลองใหม่",
+        "chat_hotline_remind": "📞 หากเป็นเรื่องด่วน โทรสายด่วนไซเบอร์ **1599** ได้เลย (ฟรี 24 ชม.)",
+        # ── Feedback ──────────────────────────────────────────────────────
+        "feedback_header": "**💬 ผลลัพธ์ไม่ถูกต้องหรือไม่? ช่วยบอกเราด้วยนะ**",
         "feedback_select_label": "เลือกคำตอบที่ถูกต้อง:",
         "feedback_placeholder": "-- กรุณาเลือก --",
-        "feedback_options": [
-            "",
-            "ham (ข้อความปกติ)",
-            "spam (สแปม)",
-            "phishing (ฟิชชิ่ง)",
-        ],
+        "feedback_options": ["", "ham (ข้อความปกติ)", "spam (สแปม)", "phishing (ฟิชชิ่ง)"],
         "btn_feedback": "📤 ส่งความคิดเห็น",
-        "feedback_success": "✅ ขอบคุณสำหรับข้อเสนอแนะ จะนำไปปรับปรุงระบบ",
-        "feedback_fail": "ไม่สามารถบันทึกความคิดเห็นได้ในขณะนี้",
+        "feedback_success": "✅ ขอบคุณ! เราจะนำข้อมูลนี้ไปปรับปรุงระบบให้ดียิ่งขึ้น",
+        "feedback_fail": "⚠️ ไม่สามารถบันทึกได้ในขณะนี้ กรุณาลองใหม่",
+        # ── Sidebar ───────────────────────────────────────────────────────
+        "sidebar_header": "🛡️ ScamGuard",
+        "sidebar_hotlines_header": "📞 สายด่วนฉุกเฉิน",
+        "sidebar_hotlines": [
+            {"number": "1599", "label": "สายด่วนไซเบอร์", "note": "ฟรี 24 ชั่วโมง"},
+            {"number": "1166", "label": "ระงับธุรกรรม", "note": "กรณีโอนเงินผิด"},
+            {"number": "1441", "label": "แจ้งความออนไลน์", "note": "ตำรวจสืบสวนฯ"},
+        ],
+        "sidebar_help_header": "❓ ต้องการความช่วยเหลือ?",
+        "sidebar_help_body": (
+            "**วิธีใช้งาน:**\n\n"
+            "1. คัดลอกข้อความต้องสงสัย\n"
+            "2. วางในช่องด้านขวา\n"
+            "3. กด **ตรวจสอบความปลอดภัย**\n\n"
+            "หากไม่แน่ใจ ให้ถามลูกหลานหรือ\n"
+            "โทรสายด่วน **1599** ได้เลย"
+        ),
+        "sidebar_privacy_header": "🔒 นโยบายความเป็นส่วนตัว",
+        "sidebar_privacy_body": (
+            "ข้อความที่ท่านส่งมาตรวจสอบ **จะไม่ถูกเก็บ** "
+            "หรือนำไปใช้เพื่อวัตถุประสงค์อื่น "
+            "ระบบนี้ใช้เพื่อช่วยผู้สูงอายุป้องกันการถูกหลอกลวงเท่านั้น"
+        ),
+        # ── Footer ────────────────────────────────────────────────────────
         "footer": (
-            "🛡️ <strong>ScamGuard</strong> v1.0.0 &nbsp;|&nbsp;"
-            " ระบบ AI ตรวจจับข้อความอันตรายสำหรับผู้สูงอายุ &nbsp;|&nbsp;"
-            " 📞 สายด่วนไซเบอร์ <strong>1599</strong>"
+            "🛡️ <strong>ScamGuard</strong> v{ver} — ระบบตรวจสอบข้อความเพื่อผู้สูงอายุ<br>"
+            "📞 สายด่วนไซเบอร์: <strong>1599</strong> &nbsp;|&nbsp; "
+            "พัฒนาโดย DSBA Team"
+        ).format(ver=APP_VERSION),
+        "footer_privacy": (
+            "🔒 ข้อความของท่านจะไม่ถูกเก็บหรือแชร์กับบุคคลที่สาม &nbsp;|&nbsp; "
+            "❓ ต้องการความช่วยเหลือ กดที่ <strong>&gt;</strong> มุมซ้ายบนเพื่อเปิดเมนูช่วยเหลือ"
         ),
-        "err_timeout": "⏱️ การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง",
-        "err_no_model": (
-            "❌ ยังไม่พบโมเดล กรุณา train โมเดลก่อนใช้งาน:\n"
-            "```\npython -m src.models.trainer\n```"
-        ),
-        # ── Chatbot tab ───────────────────────────────────────────────────
-        "tab_check": "🔍 ตรวจสอบข้อความ",
-        "tab_chat": "💬 ถามตอบ AI",
-        "chat_title": "💬 ถามตอบกับน้องการ์ด",
-        "chat_subtitle": "ถามได้เลย! เรื่องสแปม ฟิชชิ่ง วิธีรับมือ หรือสิ่งที่ต้องทำเมื่อถูกหลอก",
-        "chat_quick_header": "**คำถามที่พบบ่อย (กดเพื่อถาม):**",
-        "chat_input_placeholder": "พิมพ์คำถามของคุณที่นี่... เช่น ฟิชชิ่งคืออะไร หรือ ถูกหลอกให้โอนเงินต้องทำอย่างไร",
-        "chat_send_btn": "📤 ส่ง",
-        "chat_clear_btn": "🗑️ ล้างการสนทนา",
-        "chat_thinking": "🤔 กำลังคิด...",
-        "chat_empty": "ยังไม่มีการสนทนา — ลองกดคำถามด้านบน หรือพิมพ์คำถามของคุณ",
-        "chat_you": "คุณ",
-        "chat_bot": "น้องการ์ด",
-        "chat_err_empty": "⚠️ กรุณาพิมพ์คำถามก่อน",
-        "chat_err_fail": "⏱️ ไม่สามารถตอบได้ในขณะนี้ กรุณาลองใหม่",
-        "chat_hotline_remind": "📞 หากเป็นเรื่องเร่งด่วน โทร **1599** (สายด่วนไซเบอร์) ได้เลย",
     },
     "en": {
-        "page_title": "ScamGuard — Message Checker",
-        "sidebar_brand": "🛡️ ScamGuard",
-        "sidebar_version": f"v{APP_VERSION} — Message Checker",
-        "stats_header": "### 📊 Today's Stats",
-        "stats_checked": "Checked",
-        "stats_danger": "Threats Found",
-        "history_header": "### 🕐 Check History",
-        "history_empty": "No history yet",
-        "clear_history": "🗑️ Clear History",
-        "tips_header": "### 💡 How to Spot Dangerous Messages",
-        "tips": [
-            "Creates urgency — demands immediate action",
-            "Contains suspicious links or phone numbers",
-            "Offers prizes or money you didn't sign up for",
-            "Asks for OTP codes or personal passwords",
-            "Impersonates a bank or government agency",
-            "Threatens to suspend or close your account",
-        ],
-        "hotline_cyber": "📞 Cyber Hotline: **1599**",
-        "hotline_bank": "📞 Bank Hotline: Call the number on the back of your card",
+        # ── Page ──────────────────────────────────────────────────────────
+        "page_title": "ScamGuard — Email Safety Checker",
         "main_title": "🛡️ ScamGuard",
-        "subtitle": "AI-powered message checker — protecting you from online scams",
-        # ── Usage guide ──────────────────────────────────────────────────
-        "guide_header": "📖 How to Use ScamGuard",
-        "guide_subtitle": "Follow these simple 6 steps to check any suspicious message",
-        "guide_steps": [
-            {
-                "num": "1",
-                "icon": "📨",
-                "title": "Receive a suspicious message",
-                "body": (
-                    "When you receive an <strong>SMS, LINE message, or email</strong> "
-                    "that seems unusual — like winning a prize, debt notices, or requests for a code — "
-                    "<u>stop and do not reply or click anything</u> until you check it here first."
-                ),
-            },
-            {
-                "num": "2",
-                "icon": "📋",
-                "title": "Copy that message",
-                "body": (
-                    "Press and hold the message on your phone until a menu appears, "
-                    'then tap <strong>"Copy"</strong>. '
-                    "<br>On a computer, select all the text and press <strong>Ctrl+C</strong>."
-                ),
-            },
-            {
-                "num": "3",
-                "icon": "📝",
-                "title": "Paste the message in the box below",
-                "body": (
-                    "Press and hold inside the white box that says "
-                    '<em>"Paste a suspicious SMS, LINE message, or email here..."</em> '
-                    'then tap <strong>"Paste"</strong>. '
-                    "<br>On a computer, press <strong>Ctrl+V</strong>."
-                ),
-            },
-            {
-                "num": "4",
-                "icon": "🔍",
-                "title": 'Press the "Check Message" button',
-                "body": (
-                    "Tap the large blue button <strong>🔍 Check Message</strong> below the box. "
-                    "Wait a moment (up to 5 seconds) — the AI will analyze it automatically."
-                ),
-            },
-            {
-                "num": "5",
-                "icon": "📊",
-                "title": "Read the result",
-                "body": (
-                    "<span class='guide-result-safe'>✅ Green box = Safe message</span> "
-                    "No need to worry — you can read and reply normally.<br><br>"
-                    "<span class='guide-result-warn'>⚠️ Orange box = Spam (junk)</span> "
-                    "Unwanted message — no need to reply, just delete it.<br><br>"
-                    "<span class='guide-result-danger'>🚨 Red box = Dangerous (Phishing)</span> "
-                    "Scam message — <u>do not respond in any way</u>."
-                ),
-            },
-            {
-                "num": "6",
-                "icon": "🚔",
-                "title": "If it's dangerous — do this",
-                "body": (
-                    "🚫 <strong>Do NOT click any links</strong> in the message<br>"
-                    "🚫 <strong>Do NOT call any phone numbers</strong> from the message<br>"
-                    "🚫 <strong>Do NOT share OTP codes</strong> or passwords with anyone<br>"
-                    "📞 Call the <strong>Cyber Crime Hotline: 1599</strong> (free, 24 hours)<br>"
-                    "👨‍👩‍👧 Or <strong>call a trusted family member</strong> for help"
-                ),
-            },
-        ],
-        "guide_tip_box": (
-            "💡 <strong>Tip:</strong> If the message appears to come from someone you know "
-            "but seems unusual, call that person directly to confirm. "
-            "Never send money or personal information until you are 100% sure."
+        "subtitle": "Email & Message Safety Checker — Protect yourself from online scams",
+        # ── Tabs ──────────────────────────────────────────────────────────
+        "tab_check": "🔍  Check a Message",
+        "tab_tips": "📚  How to Spot Scams",
+        "tab_chat": "💬  Ask AI",
+        # ── 3-step guide ──────────────────────────────────────────────────
+        "steps_header": "How it works — 3 simple steps",
+        "step1_num": "1",
+        "step1_icon": "📋",
+        "step1_title": "Copy the suspicious message",
+        "step1_body": (
+            "Long-press the suspicious SMS, LINE, or email message "
+            "and choose <strong>\"Copy\"</strong>."
         ),
-        # ─────────────────────────────────────────────────────────────────
-        "input_header": "### 📩 Paste the message you want to check",
+        "step2_num": "2",
+        "step2_icon": "📝",
+        "step2_title": "Paste it in the box below",
+        "step2_body": (
+            "Long-press in the text box below and choose <strong>\"Paste\"</strong>, "
+            "then press <strong>\"Check Message Safety\"</strong>."
+        ),
+        "step3_num": "3",
+        "step3_icon": "🔍",
+        "step3_title": "View your safety result",
+        "step3_body": (
+            "The result will appear instantly: "
+            "<strong style='color:#2e7d32'>Safe</strong>, "
+            "<strong style='color:#e65100'>Suspicious</strong>, or "
+            "<strong style='color:#c62828'>Dangerous</strong>."
+        ),
+        # ── Input section ─────────────────────────────────────────────────
+        "input_header": "### 📨 Paste the message you want to check here",
         "input_placeholder": (
-            "Paste a suspicious SMS, LINE message, or email here...\n\n"
-            "Example: Congratulations! You've won 50,000 Baht. Click to claim: bit.ly/claim"
+            "Paste your message here...\n\n"
+            "Example: \"You have won 50,000 Baht! Click this link to claim your prize.\""
         ),
         "examples_expander": "📋 View example messages for testing",
-        "examples_header": "**Example messages (click to copy):**",
         "examples": {
             "⚠️ Spam — Prize": "ยินดีด้วยคุณได้รับรางวัล 100,000 บาท กดลิงก์เพื่อรับรางวัลก่อนหมดเวลา: bit.ly/reward-th",
             "🚨 Phishing — Bank": "แจ้งเตือนจากธนาคารกสิกรไทย บัญชีของท่านพบรายการผิดปกติ กรุณายืนยัน OTP: 456789 ภายใน 5 นาที",
             "🚨 Phishing — Police": "เจ้าหน้าที่ตำรวจไซเบอร์แจ้ง บัญชีของท่านเกี่ยวข้องกับคดีฟอกเงิน โทร 062-345-6789 ทันที",
             "✅ Safe message": "สวัสดีครับ วันนี้จะกลับบ้านช้าหน่อย รอหน่อยนะครับ",
         },
-        "btn_analyze": "🔍 Check Message",
-        "btn_analyze_help": "Click to analyze the message with AI",
-        "btn_clear": "🗑️ Clear",
-        "warn_empty": "⚠️ Please type or paste a message to check first",
-        "spinner": "🔄 Analyzing message...",
-        "result_header": "### 🔎 Analysis Result",
-        "result_reason_label": "📝 <strong>Reason:</strong>",
-        "metric_confidence": "Confidence",
-        "metric_risk": "Risk Level",
-        "metric_time": "Processing Time",
-        "keywords_label": "**🔑 Keywords Found:**",
-        "prob_expander": "📊 View probability breakdown",
-        "prob_labels": [
-            ("ham", "Safe", "✅"),
-            ("spam", "Spam", "⚠️"),
-            ("phishing", "Phishing", "🚨"),
+        "btn_analyze": "🔍  Check Message Safety",
+        "btn_analyze_help": "Click to check whether this message is safe",
+        "btn_clear": "🗑️  Clear",
+        "spinner": "Checking your message, please wait...",
+        "warn_empty": "⚠️ Please paste a message first before checking.",
+        "err_timeout": "⏱️ The system is slow right now. Please try again.",
+        "err_no_model": "❌ Model not found. Please contact support.",
+        # ── Result section ────────────────────────────────────────────────
+        "result_header": "### 📊 Safety Check Result",
+        "result_safe_title": "✅  This message looks safe",
+        "result_spam_title": "⚠️  This message is suspicious",
+        "result_phishing_title": "🚨  This message is dangerous!",
+        "result_safe_msg": (
+            "No signs of scam or fraud were found in this message. "
+            "Still, if you're not sure, ask a family member before clicking anything."
+        ),
+        "result_spam_msg": (
+            "This message has suspicious signs — it may be unwanted advertising or spam. "
+            "<strong>Do not click any links or call any numbers in this message.</strong>"
+        ),
+        "result_phishing_msg": (
+            "This message may be trying to <strong>steal your personal information</strong> "
+            "or <strong>trick you into sending money</strong>. "
+            "Do NOT click any link, call any number, or give your password or OTP code."
+        ),
+        "result_reason_label": "Reason:",
+        "result_keywords_label": "Warning words found:",
+        "result_action_safe": "💡 Still unsure? Ask a trusted family member or friend.",
+        "result_action_danger": (
+            "🆘 If you have already been scammed, call the <strong>Cyber Hotline 1599</strong> immediately (free, 24/7)."
+        ),
+        # ── Education tips tab ────────────────────────────────────────────
+        "tips_page_header": "## 📚 How to Spot Scam Emails & Messages",
+        "tips_intro": (
+            "Scammers often send messages pretending to be from banks, government agencies, "
+            "or well-known companies to steal your information or money. "
+            "Watch out for these warning signs:"
+        ),
+        "warning_signs": [
+            {
+                "icon": "⏰",
+                "title": "Urgency & pressure",
+                "body": (
+                    "\"Urgent!\", \"Last day!\", \"Your account will be closed in 24 hours\" "
+                    "— Scammers rush you so you act before you think."
+                ),
+            },
+            {
+                "icon": "🎁",
+                "title": "Unexpected prizes or money",
+                "body": (
+                    "\"You have won 100,000 Baht!\" or \"You were selected as our lucky winner\" "
+                    "— If you didn't enter a contest, you can't win one."
+                ),
+            },
+            {
+                "icon": "🔐",
+                "title": "Asking for OTP or password",
+                "body": (
+                    "Real banks and government agencies <strong>will never ask for your OTP</strong> "
+                    "or password over the phone or by message."
+                ),
+            },
+            {
+                "icon": "🔗",
+                "title": "Strange links or phone numbers",
+                "body": (
+                    "Links with random letters and numbers like bit.ly/... or "
+                    "phone numbers that don't match the official number — never click or call."
+                ),
+            },
+            {
+                "icon": "🏦",
+                "title": "Claiming to be a bank or government",
+                "body": (
+                    "\"Bangkok Bank\", \"Revenue Department\", \"Cyber Police\" "
+                    "— If in doubt, call the organization directly using a number you already know."
+                ),
+            },
+            {
+                "icon": "😰",
+                "title": "Threats and fear tactics",
+                "body": (
+                    "\"You have a court summons\", \"Your account was hacked\", \"Pay now or be arrested\" "
+                    "— Scammers use fear to stop you from thinking clearly."
+                ),
+            },
         ],
-        "label_map": {"ham": "Safe", "spam": "Spam", "phishing": "Phishing"},
-        "safety_warning": (
-            "**⚠️ Safety Advice:**\n"
-            "- 🚫 Do not click links or call numbers in the message\n"
-            "- 🚫 Do not share personal info, OTP codes, or passwords\n"
-            "- 📞 If in doubt, contact a trusted family member first\n"
-            "- 🚔 Report to Cyber Police Hotline: 1599"
-        ),
-        "feedback_header": "**💬 Was the result incorrect?**",
-        "feedback_select_label": "Select the correct answer:",
-        "feedback_placeholder": "-- Please select --",
-        "feedback_options": [
-            "",
-            "ham (Safe message)",
-            "spam (Spam)",
-            "phishing (Phishing)",
+        "tips_hotline_header": "### 📞 Emergency Numbers",
+        "tips_hotlines": [
+            {"icon": "🆘", "label": "Cyber Crime Hotline", "number": "1599", "note": "Free, 24 hours"},
+            {"icon": "🏦", "label": "Banking Fraud Center", "number": "1166", "note": "Wrong transfer"},
+            {"icon": "👮", "label": "Online Crime Report", "number": "1441", "note": "DSI Online"},
         ],
-        "btn_feedback": "📤 Submit Feedback",
-        "feedback_success": "✅ Thank you for your feedback! It will help improve the system.",
-        "feedback_fail": "Could not save feedback at this time.",
-        "footer": (
-            "🛡️ <strong>ScamGuard</strong> v1.0.0 &nbsp;|&nbsp;"
-            " AI-powered spam & phishing detection for the elderly &nbsp;|&nbsp;"
-            " 📞 Cyber Hotline <strong>1599</strong>"
-        ),
-        "err_timeout": "⏱️ Connection timed out. Please try again.",
-        "err_no_model": (
-            "❌ Model not found. Please train the model first:\n"
-            "```\npython -m src.models.trainer\n```"
-        ),
-        # ── Chatbot tab ───────────────────────────────────────────────────
-        "tab_check": "🔍 Check Message",
-        "tab_chat": "💬 Ask AI",
-        "chat_title": "💬 Chat with Guardian",
-        "chat_subtitle": "Ask me anything about spam, phishing, how to stay safe, or what to do if you've been scammed.",
-        "chat_quick_header": "**Frequently asked questions (tap to ask):**",
-        "chat_input_placeholder": "Type your question here... e.g. What is phishing? or I was scammed, what should I do?",
-        "chat_send_btn": "📤 Send",
-        "chat_clear_btn": "🗑️ Clear Chat",
-        "chat_thinking": "🤔 Thinking...",
-        "chat_empty": "No conversation yet — tap a question above or type your own.",
+        # ── Chatbot ───────────────────────────────────────────────────────
+        "chat_quick_header": "#### Common Questions — tap to ask",
+        "chat_empty": "Type your question in the box below, or choose a question above.",
+        "chat_input_placeholder": "Type your question here...",
+        "chat_clear_btn": "🗑️  Clear conversation",
+        "chat_thinking": "Thinking of an answer...",
         "chat_you": "You",
-        "chat_bot": "Guardian",
+        "chat_bot": "Guardian (ScamGuard AI)",
         "chat_err_empty": "⚠️ Please type a question first.",
         "chat_err_fail": "⏱️ Could not get a response right now. Please try again.",
         "chat_hotline_remind": "📞 For urgent matters, call the **Cyber Hotline: 1599** (free, 24/7)",
+        # ── Feedback ──────────────────────────────────────────────────────
+        "feedback_header": "**💬 Was the result incorrect? Please let us know.**",
+        "feedback_select_label": "Select the correct answer:",
+        "feedback_placeholder": "-- Please select --",
+        "feedback_options": ["", "ham (Safe message)", "spam (Spam)", "phishing (Phishing)"],
+        "btn_feedback": "📤 Submit Feedback",
+        "feedback_success": "✅ Thank you! Your feedback helps improve the system.",
+        "feedback_fail": "⚠️ Could not save feedback right now. Please try again.",
+        # ── Sidebar ───────────────────────────────────────────────────────
+        "sidebar_header": "🛡️ ScamGuard",
+        "sidebar_hotlines_header": "📞 Emergency Hotlines",
+        "sidebar_hotlines": [
+            {"number": "1599", "label": "Cyber Crime Hotline", "note": "Free, 24 hours"},
+            {"number": "1166", "label": "Block Transaction", "note": "Wrong transfer"},
+            {"number": "1441", "label": "Report Online Crime", "note": "DSI Online"},
+        ],
+        "sidebar_help_header": "❓ Need Help?",
+        "sidebar_help_body": (
+            "**How to use:**\n\n"
+            "1. Copy the suspicious message\n"
+            "2. Paste it in the box on the right\n"
+            "3. Press **Check Message Safety**\n\n"
+            "If you're unsure, ask a family member\n"
+            "or call hotline **1599** anytime."
+        ),
+        "sidebar_privacy_header": "🔒 Privacy Policy",
+        "sidebar_privacy_body": (
+            "The messages you submit **are not stored** "
+            "or used for any other purpose. "
+            "This system exists only to help senior citizens avoid online scams."
+        ),
+        # ── Footer ────────────────────────────────────────────────────────
+        "footer": (
+            "🛡️ <strong>ScamGuard</strong> v{ver} — Email Safety Checker for Seniors<br>"
+            "📞 Cyber Hotline: <strong>1599</strong> &nbsp;|&nbsp; "
+            "Built by DSBA Team"
+        ).format(ver=APP_VERSION),
+        "footer_privacy": (
+            "🔒 Your messages are never stored or shared with any third party. &nbsp;|&nbsp; "
+            "❓ Need help? Click <strong>&gt;</strong> in the top-left corner to open the help menu."
+        ),
     },
 }
 
@@ -409,379 +446,447 @@ TEXTS: dict = {
 # Page configuration (must be first Streamlit call)
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="ScamGuard — ตรวจสอบข้อความ",
+    page_title="ScamGuard — ตรวจสอบความปลอดภัย",
     page_icon="🛡️",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="collapsed",
     menu_items={
         "Get Help": None,
         "Report a bug": None,
-        "About": "ScamGuard v1.0.0 — AI spam & phishing detection for the elderly",
+        "About": f"ScamGuard v{APP_VERSION} — Email Safety Checker for Seniors",
     },
 )
 
 # ---------------------------------------------------------------------------
-# Custom CSS — Large fonts, high contrast, elderly-friendly + hide toolbar
+# Custom CSS — Elderly-Friendly Design
+# Font: 20px base | Max-width: 860px | High contrast | Large buttons
 # ---------------------------------------------------------------------------
 st.markdown(
     """
 <style>
-    /* ── Hide Deploy button + 3-dot menu (Streamlit 1.54) ── */
+    /* ── Hide Streamlit chrome + sidebar entirely ── */
     [data-testid="stHeaderActionElements"] { display: none !important; }
-    [data-testid="stToolbar"]           { display: none !important; }
-    [data-testid="stToolbarActions"]    { display: none !important; }
-    [data-testid="stDecoration"]        { display: none !important; }
-    [data-testid="stStatusWidget"]      { display: none !important; }
-    #MainMenu                           { display: none !important; }
-    .stDeployButton                     { display: none !important; }
-    button[kind="header"]               { display: none !important; }
+    [data-testid="stToolbar"]              { display: none !important; }
+    [data-testid="stDecoration"]           { display: none !important; }
+    [data-testid="stStatusWidget"]         { display: none !important; }
+    [data-testid="stSidebar"]              { display: none !important; }
+    [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    [data-testid="collapsedControl"]       { display: none !important; }
+    #MainMenu                              { display: none !important; }
+    .stDeployButton                        { display: none !important; }
 
-    /* ── Hide sidebar entirely ── */
-    [data-testid="stSidebar"]          { display: none !important; }
-    section[data-testid="stSidebar"]   { display: none !important; }
-    [data-testid="stSidebarNav"]       { display: none !important; }
-    [data-testid="collapsedControl"]   { display: none !important; }
 
-    /* ── Wide layout with generous desktop space ── */
+    /* ── Import Thai-friendly font ── */
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
+
+    /* ── Base typography — 20px minimum ── */
+    html, body, [class*="css"] {
+        font-family: 'Sarabun', 'Tahoma', 'Arial', sans-serif !important;
+        font-size: 20px !important;
+        line-height: 1.75 !important;
+        color: #212121 !important;
+    }
+
+    /* ── Centered, readable container ── */
     .block-container {
-        max-width: 1400px !important;
-        width: 96% !important;
+        max-width: 860px !important;
+        width: 94% !important;
         margin: 0 auto !important;
         padding-top: 1.5rem !important;
-        padding-bottom: 3rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+        padding-bottom: 4rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
 
-    @media (max-width: 1280px) {
-        .block-container { max-width: 1100px !important; }
+    /* ── Page header ── */
+    .page-header {
+        text-align: center;
+        padding: 1.2rem 0 0.5rem 0;
     }
 
-    @media (max-width: 1024px) {
-        .block-container { max-width: 900px !important; }
-    }
-
-    @media (max-width: 768px) {
-        .block-container {
-            width: 100% !important;
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-        }
-    }
-
-    /* ── Base font size for elderly ── */
-    html, body, [class*="css"] {
-        font-size: 18px !important;
-    }
-
-    /* ── Main title (fallback when no logo) ── */
-    .main-title {
+    .page-title {
         font-size: 2.8rem !important;
         font-weight: 900 !important;
         color: #1a237e !important;
-        text-align: center;
-        padding: 1rem 0 0.5rem 0;
-        font-family: 'Sarabun', 'Tahoma', sans-serif;
+        margin: 0;
+        line-height: 1.2;
     }
 
-    .subtitle {
-        font-size: 1.3rem !important;
-        color: #37474f !important;
-        text-align: center;
-        padding-bottom: 1.5rem;
+    .page-subtitle {
+        font-size: 1.15rem !important;
+        color: #455a64 !important;
+        margin-top: 0.4rem;
     }
 
-    /* ── Logo header ── */
-    .logo-header-wrap {
+    /* ── Language toggle (top-right fixed) ── */
+    .lang-toggle-wrap {
+        position: fixed;
+        top: 12px;
+        right: 16px;
+        z-index: 9999;
+        background: rgba(255,255,255,0.95);
+        border: 1.5px solid #c5cae9;
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: 1rem !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .lang-active {
+        color: #1a237e;
+        font-weight: 800;
+    }
+
+    .lang-link {
+        color: #78909c;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .lang-link:hover { color: #1a237e; }
+    .lang-divider { color: #ccc; margin: 0 4px; }
+
+    /* ── 3-step guide ── */
+    .steps-wrap {
+        background: #f0f4ff;
+        border: 2px solid #3949ab;
+        border-radius: 16px;
+        padding: 1.4rem 1.6rem 1.2rem 1.6rem;
+        margin: 1.2rem 0 1.6rem 0;
+    }
+
+    .steps-header {
+        font-size: 1.4rem !important;
+        font-weight: 900 !important;
+        color: #1a237e;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .step-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: #ffffff;
+        border: 2px solid #c5cae9;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        margin: 0.6rem 0;
+    }
+
+    .step-num {
+        background: #1a237e;
+        color: #ffffff;
+        border-radius: 50%;
+        min-width: 2.4rem;
+        width: 2.4rem;
+        height: 2.4rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem 0 0.3rem 0;
+        font-size: 1.2rem;
+        font-weight: 900;
+        flex-shrink: 0;
     }
 
-    /* ── Subtitle under logo ── */
-    .logo-subtitle {
-        font-size: 1.15rem !important;
-        color: #546e7a !important;
-        text-align: center;
-        padding-bottom: 0.8rem;
-        font-family: 'Sarabun', 'Tahoma', sans-serif;
+    .step-icon {
+        font-size: 2rem;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-top: 0.1rem;
     }
 
-    /* ── Usage Guide ── */
-    .guide-container {
-        background-color: #f0f4ff;
-        border: 2px solid #3949ab;
-        border-radius: 16px;
-        padding: 1.5rem 2rem;
-        margin: 1rem 0 1.5rem 0;
-    }
-
-    .guide-header {
-        font-size: 1.6rem !important;
-        font-weight: 900 !important;
+    .step-content h4 {
+        font-size: 1.15rem;
+        font-weight: 800;
         color: #1a237e;
-        margin-bottom: 0.3rem;
+        margin: 0 0 0.3rem 0;
     }
 
-    .guide-subtitle {
-        font-size: 1.05rem;
-        color: #546e7a;
-        margin-bottom: 1.2rem;
+    .step-content p {
+        font-size: 1rem;
+        color: #37474f;
+        margin: 0;
+        line-height: 1.7;
     }
 
-    .guide-step {
-        background-color: #ffffff;
-        border: 2px solid #c5cae9;
+    /* ── Input label ── */
+    .stTextArea label,
+    .stTextArea > label > div {
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+        color: #1a237e !important;
+    }
+
+    textarea {
+        font-size: 1.15rem !important;
+        line-height: 1.8 !important;
+        border: 2px solid #9fa8da !important;
+        border-radius: 10px !important;
+    }
+
+    textarea:focus {
+        border-color: #3949ab !important;
+        box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.15) !important;
+    }
+
+    /* ── Primary button (Check Safety) ── */
+    .stButton > button[kind="primary"] {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        padding: 0.9rem 2rem !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        background-color: #1a237e !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(26,35,126,0.3) !important;
+        letter-spacing: 0.02em;
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        background-color: #283593 !important;
+        box-shadow: 0 6px 16px rgba(26,35,126,0.4) !important;
+        transform: translateY(-1px);
+    }
+
+    /* ── Secondary button (Clear) ── */
+    .stButton > button[kind="secondary"],
+    .stButton > button:not([kind]) {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        padding: 0.6rem 1.2rem !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        color: #37474f !important;
+        border: 2px solid #b0bec5 !important;
+    }
+
+    /* ── Result cards ── */
+    .result-card {
+        border-radius: 16px;
+        padding: 1.8rem 2rem;
+        margin: 1.2rem 0;
+        border: 3px solid;
+    }
+
+    .result-card-safe {
+        background-color: #e8f5e9;
+        border-color: #2e7d32;
+    }
+
+    .result-card-warn {
+        background-color: #fff8e1;
+        border-color: #f57f17;
+    }
+
+    .result-card-danger {
+        background-color: #ffebee;
+        border-color: #c62828;
+    }
+
+    .result-title {
+        font-size: 2rem !important;
+        font-weight: 900 !important;
+        margin: 0 0 0.7rem 0;
+        line-height: 1.3;
+    }
+
+    .result-title-safe    { color: #1b5e20; }
+    .result-title-warn    { color: #bf360c; }
+    .result-title-danger  { color: #b71c1c; }
+
+    .result-body {
+        font-size: 1.15rem !important;
+        line-height: 1.85;
+        color: #212121;
+        margin: 0;
+    }
+
+    .result-keywords {
+        margin-top: 1rem;
+        font-size: 1rem !important;
+        color: #424242;
+    }
+
+    .kw-tag {
+        display: inline-block;
+        background: #ffcdd2;
+        color: #b71c1c;
+        border-radius: 6px;
+        padding: 2px 10px;
+        margin: 2px 4px 2px 0;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .kw-tag-safe {
+        background: #c8e6c9;
+        color: #1b5e20;
+    }
+
+    .result-action {
+        margin-top: 1.2rem;
+        font-size: 1.1rem !important;
+        font-weight: 600;
+        padding: 0.8rem 1.2rem;
+        border-radius: 10px;
+        background: rgba(0,0,0,0.04);
+        border-left: 5px solid rgba(0,0,0,0.15);
+    }
+
+    /* ── Warning callout ── */
+    .warn-callout {
+        background: #fff3e0;
+        border: 2px solid #ff6f00;
         border-radius: 12px;
-        padding: 1rem 1.3rem;
-        margin: 0.7rem 0;
+        padding: 1rem 1.4rem;
+        font-size: 1.1rem !important;
+        font-weight: 600;
+        color: #e65100;
+        margin: 1rem 0;
+    }
+
+    /* ── Education tips ── */
+    .tip-card {
+        background: #ffffff;
+        border: 2px solid #e0e0e0;
+        border-radius: 14px;
+        padding: 1.2rem 1.4rem;
+        margin: 0.8rem 0;
         display: flex;
         align-items: flex-start;
         gap: 1rem;
     }
 
-    .guide-step-num {
-        background-color: #1a237e;
-        color: #ffffff;
-        border-radius: 50%;
-        width: 2.2rem;
-        height: 2.2rem;
-        min-width: 2.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        font-weight: 900;
-    }
-
-    .guide-step-icon {
-        font-size: 1.8rem;
-        min-width: 2rem;
-        text-align: center;
+    .tip-icon {
+        font-size: 2.2rem;
+        flex-shrink: 0;
         line-height: 1;
+        margin-top: 0.1rem;
     }
 
-    .guide-step-body h4 {
-        font-size: 1.15rem;
+    .tip-title {
+        font-size: 1.2rem;
         font-weight: 800;
         color: #1a237e;
-        margin: 0 0 0.4rem 0;
+        margin: 0 0 0.3rem 0;
     }
 
-    .guide-step-body p {
-        font-size: 1.05rem;
+    .tip-body {
+        font-size: 1rem;
         color: #37474f;
         margin: 0;
-        line-height: 1.8;
-    }
-
-    .guide-result-safe {
-        background-color: #e8f5e9;
-        border: 2px solid #2e7d32;
-        border-radius: 8px;
-        padding: 0.3rem 0.8rem;
-        font-weight: 700;
-        color: #1b5e20;
-        display: inline-block;
-        margin-bottom: 0.3rem;
-    }
-
-    .guide-result-warn {
-        background-color: #fff8e1;
-        border: 2px solid #f57f17;
-        border-radius: 8px;
-        padding: 0.3rem 0.8rem;
-        font-weight: 700;
-        color: #e65100;
-        display: inline-block;
-        margin-bottom: 0.3rem;
-    }
-
-    .guide-result-danger {
-        background-color: #ffebee;
-        border: 2px solid #c62828;
-        border-radius: 8px;
-        padding: 0.3rem 0.8rem;
-        font-weight: 700;
-        color: #b71c1c;
-        display: inline-block;
-        margin-bottom: 0.3rem;
-    }
-
-    .guide-tip {
-        background-color: #fff9c4;
-        border-left: 5px solid #f9a825;
-        border-radius: 8px;
-        padding: 0.9rem 1.2rem;
-        margin-top: 1rem;
-        font-size: 1.05rem;
         line-height: 1.7;
-        color: #37474f;
     }
 
-    /* ── Result cards ── */
-    .result-safe {
-        background-color: #e8f5e9;
-        border: 3px solid #2e7d32;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-    }
-    .result-danger {
-        background-color: #ffebee;
-        border: 3px solid #c62828;
-        border-radius: 12px;
-        padding: 1.5rem;
+    /* Hotline cards */
+    .hotline-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
         margin: 1rem 0;
     }
 
-    .result-title {
-        font-size: 2rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 0.5rem;
+    .hotline-card {
+        flex: 1 1 220px;
+        background: #e3f2fd;
+        border: 2px solid #1565c0;
+        border-radius: 14px;
+        padding: 1rem 1.3rem;
+        text-align: center;
     }
 
-    .result-explanation {
-        font-size: 1.2rem !important;
-        margin-top: 0.5rem;
-        line-height: 1.8;
-    }
-
-    /* ── Buttons ── */
-    .stButton > button {
-        font-size: 1.4rem !important;
-        font-weight: 700 !important;
-        padding: 0.8rem 2rem !important;
-        border-radius: 10px !important;
-        width: 100%;
-    }
-
-    /* ── Text area ── */
-    .stTextArea > label {
-        font-size: 1.3rem !important;
-        font-weight: 700 !important;
-    }
-
-    textarea {
-        font-size: 1.2rem !important;
-        line-height: 1.7 !important;
-    }
-
-    /* ── Sidebar ── */
-    .sidebar-title {
-        font-size: 1.4rem !important;
-        font-weight: 800 !important;
-        color: #1a237e;
-        border-bottom: 2px solid #1a237e;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .tip-box {
-        background-color: #e3f2fd;
-        border-left: 4px solid #1976d2;
-        border-radius: 6px;
-        padding: 0.8rem 1rem;
-        margin: 0.5rem 0;
-        font-size: 1rem;
-        line-height: 1.6;
-    }
-
-    .history-item {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 0.6rem 0.8rem;
-        margin: 0.4rem 0;
-        font-size: 0.95rem;
-    }
-
-    /* ── Metric cards ── */
-    [data-testid="metric-container"] {
-        background-color: #f5f5f5;
-        border-radius: 10px;
-        padding: 0.8rem;
-    }
-
-    [data-testid="stMetricValue"] {
-        font-size: 2rem !important;
+    .hotline-number {
+        font-size: 2.2rem !important;
         font-weight: 900 !important;
+        color: #1565c0;
+        line-height: 1.2;
     }
 
-    [data-testid="stMetricLabel"] {
+    .hotline-label {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0d47a1;
+        margin-top: 0.3rem;
+    }
+
+    .hotline-note {
         font-size: 1rem !important;
+        color: #546e7a;
+        margin-top: 0.2rem;
     }
 
     /* ── Tabs ── */
     [data-testid="stTabs"] [data-baseweb="tab"] {
-        font-size: 1.2rem !important;
+        font-size: 1.15rem !important;
         font-weight: 700 !important;
-        padding: 0.7rem 1.5rem !important;
+        padding: 0.7rem 1.4rem !important;
     }
 
-    /* ══════════════════════════════════════════
-       LINE-like Chat UI
-    ══════════════════════════════════════════ */
+    /* ── Streamlit alerts (warning/error/success) ── */
+    .stAlert > div {
+        font-size: 1.1rem !important;
+    }
 
-    /* LINE header bar */
-    .line-chat-header {
+    /* ── Spinner ── */
+    .stSpinner > div {
+        font-size: 1.1rem !important;
+    }
+
+    /* ── Chat UI ── */
+    .chat-header {
         background: linear-gradient(135deg, #06C755 0%, #00A040 100%);
         color: white;
-        border-radius: 20px;
+        border-radius: 16px;
         padding: 1rem 1.4rem;
         display: flex;
         align-items: center;
         gap: 1rem;
         margin-bottom: 1.2rem;
-        box-shadow: 0 4px 16px rgba(6, 199, 85, 0.35);
+        box-shadow: 0 4px 14px rgba(6, 199, 85, 0.3);
     }
 
-    .line-chat-avatar-wrap {
+    .chat-avatar {
         background: white;
         border-radius: 50%;
-        width: 3.2rem;
-        height: 3.2rem;
-        min-width: 3.2rem;
+        width: 3rem;
+        height: 3rem;
+        min-width: 3rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        font-size: 1.6rem;
     }
 
-    .line-chat-name {
-        font-size: 1.25rem;
+    .chat-name {
+        font-size: 1.2rem;
         font-weight: 900;
-        line-height: 1.3;
     }
 
-    .line-chat-status {
-        font-size: 0.9rem;
+    .chat-status {
+        font-size: 1rem !important;
         opacity: 0.92;
-        margin-top: 0.1rem;
     }
 
-    .line-chat-badge {
+    .chat-badge {
         margin-left: auto;
-        background: rgba(255,255,255,0.25);
-        border-radius: 10px;
-        padding: 0.2rem 0.6rem;
-        font-size: 0.8rem;
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        padding: 0.2rem 0.7rem;
+        font-size: 1rem !important;
         font-weight: 700;
-        white-space: nowrap;
     }
 
     /* Quick question pills */
     div[data-testid="stHorizontalBlock"] .stButton > button {
         border-radius: 20px !important;
-        font-size: 0.92rem !important;
+        font-size: 1rem !important;
         font-weight: 600 !important;
-        padding: 0.35rem 0.8rem !important;
+        padding: 0.4rem 0.9rem !important;
         background: white !important;
         color: #00A040 !important;
         border: 2px solid #06C755 !important;
-        box-shadow: 0 1px 4px rgba(6,199,85,0.15) !important;
-        transition: all 0.15s ease;
     }
 
     div[data-testid="stHorizontalBlock"] .stButton > button:hover {
@@ -789,134 +894,40 @@ st.markdown(
         color: white !important;
     }
 
-    /* User chat bubble — right, LINE green */
-    .line-user-wrap {
-        display: flex;
-        justify-content: flex-end;
-        margin: 0.15rem 0;
-    }
-
-    .line-bubble-user {
-        background: #06C755;
-        color: #ffffff;
-        border-radius: 18px 18px 4px 18px;
-        padding: 0.75rem 1.1rem;
-        font-size: 1.1rem;
-        line-height: 1.7;
-        max-width: 82%;
-        word-wrap: break-word;
-        box-shadow: 0 2px 8px rgba(6,199,85,0.28);
-        display: inline-block;
-        text-align: left;
-    }
-
-    /* Bot chat bubble — left, white */
-    .line-bot-wrap {
-        display: flex;
-        justify-content: flex-start;
-        margin: 0.15rem 0;
-    }
-
-    .line-bubble-bot {
-        background: #ffffff;
-        color: #333333;
-        border-radius: 4px 18px 18px 18px;
-        padding: 0.75rem 1.1rem;
-        font-size: 1.1rem;
-        line-height: 1.8;
-        max-width: 88%;
-        word-wrap: break-word;
-        border: 1.5px solid #E8E8E8;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        display: inline-block;
-    }
-
-    /* Override Streamlit chat message chrome */
-    [data-testid="stChatMessage"] {
-        background: transparent !important;
-        padding: 0.15rem 0 !important;
-        gap: 0.6rem !important;
-    }
-
-    [data-testid="stChatMessageContent"] {
-        background: transparent !important;
-        padding: 0 !important;
-    }
-
-    /* Hide user person icon */
-    [data-testid="stChatMessageAvatarUser"] {
-        display: none !important;
-    }
-
-    /* Larger bot avatar circle */
-    [data-testid="stChatMessageAvatarAssistant"] {
-        width: 3rem !important;
-        height: 3rem !important;
-        min-width: 3rem !important;
-        font-size: 1.6rem !important;
-        line-height: 3rem !important;
-        border-radius: 50% !important;
-    }
-
-    /* Empty state */
-    .chat-empty-state {
+    /* ── Footer ── */
+    .page-footer {
         text-align: center;
-        color: #9e9e9e;
-        padding: 3rem 1rem;
-        font-size: 1rem;
+        color: #607d8b;
+        font-size: 1rem !important;
+        padding: 1.5rem 0 0.5rem 0;
+        line-height: 2;
     }
 
-    .chat-empty-state .chat-empty-icon {
-        font-size: 3.5rem;
-        margin-bottom: 0.5rem;
+    /* ── Footer ── */
+    .footer-privacy {
+        text-align: center;
+        font-size: 1rem !important;
+        color: #78909c;
+        padding: 0.5rem 0 1rem 0;
+        line-height: 1.8;
     }
 
-    /* ── Language toggle — fixed top-right ── */
-    .lang-toggle-wrap {
-        position: fixed;
-        top: 14px;
-        right: 20px;
-        z-index: 9999;
-        background: rgba(255, 255, 255, 0.96);
-        border-radius: 24px;
-        padding: 5px 16px;
-        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(0, 0, 0, 0.07);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-family: 'Sarabun', 'Tahoma', sans-serif;
+    /* ── tips intro text ── */
+    .tips-intro {
+        font-size: 1.1rem !important;
+        color: #455a64;
+        margin-bottom: 1rem;
+        line-height: 1.8;
     }
 
-    .lang-active {
-        color: #1a237e;
-        font-weight: 800;
-        font-size: 0.92rem;
-    }
-
-    .lang-link {
-        color: #9e9e9e;
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.92rem;
-        transition: color 0.2s ease;
-    }
-
-    .lang-link:hover { color: #1a237e; }
-
-    .lang-divider { color: #ddd; font-weight: 300; }
-
-    /* Tablet */
-    @media (max-width: 1024px) {
-        .lang-toggle-wrap { top: 10px; right: 14px; padding: 5px 14px; }
-    }
-
-    /* Mobile */
-    @media (max-width: 768px) {
-        .lang-toggle-wrap { top: 8px; right: 10px; padding: 4px 11px; }
-        .lang-active, .lang-link { font-size: 0.8rem !important; }
+    /* ── Mobile responsive ── */
+    @media (max-width: 600px) {
+        html, body, [class*="css"] { font-size: 18px !important; }
+        .page-title   { font-size: 2.2rem !important; }
+        .result-title { font-size: 1.7rem !important; }
+        .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+        .lang-toggle-wrap { font-size: 1rem !important; padding: 4px 10px; }
+        .hotline-card { flex: 1 1 100%; }
     }
 </style>
 """,
@@ -924,7 +935,7 @@ st.markdown(
 )
 
 # ---------------------------------------------------------------------------
-# Session state initialization
+# Session state
 # ---------------------------------------------------------------------------
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -932,38 +943,30 @@ if "total_checked" not in st.session_state:
     st.session_state.total_checked = 0
 if "spam_found" not in st.session_state:
     st.session_state.spam_found = 0
-if "feedback_submitted" not in st.session_state:
-    st.session_state.feedback_submitted = False
 if "lang" not in st.session_state:
     st.session_state.lang = "th"
 if "chat_messages" not in st.session_state:
-    st.session_state.chat_messages = (
-        []
-    )  # [{"role": "user"|"assistant", "content": "..."}]
+    st.session_state.chat_messages = []
 if "chat_input_prefill" not in st.session_state:
     st.session_state.chat_input_prefill = ""
 if "_chat_pending" not in st.session_state:
-    st.session_state._chat_pending = None  # prompt waiting for API response
+    st.session_state._chat_pending = None
 
-# Read language from URL query param (?lang=th or ?lang=en)
+# Read language from URL param
 _qp = st.query_params
 if "lang" in _qp and _qp["lang"] in ("th", "en"):
     st.session_state.lang = _qp["lang"]
 
-# T is resolved once per run from session_state.lang
 T = TEXTS[st.session_state.lang]
 
 
 # ---------------------------------------------------------------------------
-# Helper functions
+# API helper functions
 # ---------------------------------------------------------------------------
 def call_predict_api(text: str, T: dict) -> dict | None:
-    """Call the FastAPI prediction endpoint."""
     try:
         response = requests.post(
-            f"{API_URL}/predict",
-            json={"text": text},
-            timeout=10,
+            f"{API_URL}/predict", json={"text": text}, timeout=10
         )
         response.raise_for_status()
         return response.json()
@@ -977,7 +980,6 @@ def call_predict_api(text: str, T: dict) -> dict | None:
 
 
 def _predict_local(text: str, T: dict) -> dict | None:
-    """Direct local prediction fallback (no API server required)."""
     try:
         from src.models.predictor import get_predictor
 
@@ -991,40 +993,10 @@ def _predict_local(text: str, T: dict) -> dict | None:
         return None
 
 
-def get_api_stats() -> dict | None:
-    """Fetch prediction statistics from API."""
-    try:
-        response = requests.get(f"{API_URL}/stats", timeout=5)
-        return response.json()
-    except Exception:
-        return None
-
-
-def submit_feedback(text: str, predicted: str, actual: str) -> bool:
-    """Submit user feedback to the API."""
-    try:
-        response = requests.post(
-            f"{API_URL}/feedback",
-            json={"text": text, "predicted_label": predicted, "actual_label": actual},
-            timeout=5,
-        )
-        return response.status_code == 200
-    except Exception:
-        return False
-
-
 def call_chat_api(message: str, history: list[dict], T: dict) -> str | None:
-    """เรียก /chat endpoint หรือ local chatbot fallback"""
-    payload = {
-        "message": message,
-        "history": history[-10:],
-    }
+    payload = {"message": message, "history": history[-10:]}
     try:
-        response = requests.post(
-            f"{API_URL}/chat",
-            json=payload,
-            timeout=20,
-        )
+        response = requests.post(f"{API_URL}/chat", json=payload, timeout=20)
         response.raise_for_status()
         return response.json().get("reply", "")
     except requests.exceptions.ConnectionError:
@@ -1037,7 +1009,6 @@ def call_chat_api(message: str, history: list[dict], T: dict) -> str | None:
 
 
 def _chat_local(message: str, history: list[dict]) -> str | None:
-    """Local chatbot fallback (ไม่ต้องใช้ API server)"""
     try:
         from src.api.chatbot import get_chatbot
 
@@ -1048,8 +1019,19 @@ def _chat_local(message: str, history: list[dict]) -> str | None:
         return f"ขออภัย เกิดข้อผิดพลาด: {exc}"
 
 
+def submit_feedback(text: str, predicted: str, actual: str) -> bool:
+    try:
+        response = requests.post(
+            f"{API_URL}/feedback",
+            json={"text": text, "predicted_label": predicted, "actual_label": actual},
+            timeout=5,
+        )
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
 def _escape_html(text: str) -> str:
-    """Escape user-provided text ป้องกัน XSS ใน chat bubble"""
     return (
         text.replace("&", "&amp;")
         .replace("<", "&lt;")
@@ -1060,118 +1042,107 @@ def _escape_html(text: str) -> str:
 
 
 def _md_to_html(text: str) -> str:
-    """แปลง markdown เบื้องต้น → HTML สำหรับ bot bubble (trusted source)"""
     import re as _re
 
     text = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
     text = _re.sub(r"\*([^*\n]+?)\*", r"<em>\1</em>", text)
-    text = text.replace("\n", "<br>")
-    return text
+    return text.replace("\n", "<br>")
 
 
-def render_guide(T: dict) -> None:
-    """Render the step-by-step usage guide for elderly users."""
-    # Build HTML as a list of strings to avoid f-string nesting issues
+# ---------------------------------------------------------------------------
+# UI components
+# ---------------------------------------------------------------------------
+
+def render_steps(T: dict) -> None:
+    """3-step how-to guide."""
     parts = [
-        '<div class="guide-container">',
-        '<div class="guide-header">' + T["guide_header"] + "</div>",
-        '<div class="guide-subtitle">' + T["guide_subtitle"] + "</div>",
+        '<div class="steps-wrap">',
+        f'<div class="steps-header">📖 {T["steps_header"]}</div>',
     ]
-    for step in T["guide_steps"]:
-        parts += [
-            '<div class="guide-step">',
-            '<div class="guide-step-num">' + step["num"] + "</div>",
-            '<div class="guide-step-icon">' + step["icon"] + "</div>",
-            '<div class="guide-step-body">',
-            "<h4>" + step["title"] + "</h4>",
-            "<p>" + step["body"] + "</p>",
-            "</div></div>",
-        ]
-    parts += [
-        '<div class="guide-tip">' + T["guide_tip_box"] + "</div>",
-        "</div>",
-    ]
+    for i in range(1, 4):
+        num  = T[f"step{i}_num"]
+        icon = T[f"step{i}_icon"]
+        title = T[f"step{i}_title"]
+        body  = T[f"step{i}_body"]
+        parts.append(
+            f'<div class="step-row">'
+            f'<div class="step-num">{num}</div>'
+            f'<div class="step-icon">{icon}</div>'
+            f'<div class="step-content"><h4>{title}</h4><p>{body}</p></div>'
+            f'</div>'
+        )
+    parts.append("</div>")
     st.markdown("\n".join(parts), unsafe_allow_html=True)
 
 
-def display_result(result: dict, original_text: str, T: dict) -> None:
-    """Render prediction result with color coding and explanation."""
-    label = result["label"]
-    label_th = result["label_th"]
-    confidence = result["confidence"]
-    risk_level = result["risk_level"]
-    explanation = result["explanation"]
+def display_result(result: dict, T: dict, original_text: str = "") -> None:
+    """
+    Elderly-friendly result card:
+    - Big title with emoji
+    - Plain-language explanation (no % confidence, no processing time)
+    - Dangerous keywords shown as readable tags
+    - Clear action advice
+    """
+    label = result.get("label", "ham")
+    explanation = result.get("explanation", "")
     keywords = result.get("keywords", [])
-    probabilities = result.get("probabilities", {})
 
     if label == "ham":
-        card_class = "result-safe"
-        emoji = "✅"
-        title_color = "#1b5e20"
+        card_cls   = "result-card result-card-safe"
+        title_cls  = "result-title result-title-safe"
+        title_txt  = T["result_safe_title"]
+        body_txt   = T["result_safe_msg"]
+        action_txt = T["result_action_safe"]
+        kw_cls     = "kw-tag-safe"
     elif label == "spam":
-        card_class = "result-danger"
-        emoji = "⚠️"
-        title_color = "#b71c1c"
+        card_cls   = "result-card result-card-warn"
+        title_cls  = "result-title result-title-warn"
+        title_txt  = T["result_spam_title"]
+        body_txt   = T["result_spam_msg"]
+        action_txt = T["result_action_danger"]
+        kw_cls     = "kw-tag"
     else:  # phishing
-        card_class = "result-danger"
-        emoji = "🚨"
-        title_color = "#880e4f"
+        card_cls   = "result-card result-card-danger"
+        title_cls  = "result-title result-title-danger"
+        title_txt  = T["result_phishing_title"]
+        body_txt   = T["result_phishing_msg"]
+        action_txt = T["result_action_danger"]
+        kw_cls     = "kw-tag"
 
-    # Main result card
+    # Keyword tags
+    kw_html = ""
+    if keywords:
+        tags = "".join(f'<span class="{kw_cls}">{kw}</span>' for kw in keywords)
+        kw_html = (
+            f'<div class="result-keywords">'
+            f'<strong>{T["result_keywords_label"]}</strong> {tags}'
+            f'</div>'
+        )
+
+    # Explanation (from model) shown only when non-empty
+    explanation_html = ""
+    if explanation:
+        explanation_html = (
+            f'<p class="result-body" style="margin-top:0.6rem; font-style:italic; color:#546e7a;">'
+            f'{T["result_reason_label"]} {explanation}'
+            f'</p>'
+        )
+
     st.markdown(
         f"""
-    <div class="{card_class}">
-        <div class="result-title" style="color: {title_color};">
-            {emoji} &nbsp; {label_th.upper()}
+        <div class="{card_cls}">
+            <div class="{title_cls}">{title_txt}</div>
+            <p class="result-body">{body_txt}</p>
+            {explanation_html}
+            {kw_html}
+            <div class="result-action">{action_txt}</div>
         </div>
-        <div class="result-explanation">
-            {T["result_reason_label"]} {explanation}
-        </div>
-    </div>
-    """,
+        """,
         unsafe_allow_html=True,
     )
 
-    # Metrics row
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(
-            label=T["metric_confidence"],
-            value=f"{confidence * 100:.1f}%",
-        )
-    with col2:
-        risk_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(risk_level, "⚪")
-        st.metric(
-            label=T["metric_risk"],
-            value=f"{risk_emoji} {result.get('risk_level_th', risk_level)}",
-        )
-    with col3:
-        st.metric(
-            label=T["metric_time"],
-            value=f"{result.get('processing_time_ms', 0):.0f} ms",
-        )
-
-    # Keywords
-    if keywords:
-        st.markdown(
-            T["keywords_label"] + " " + " • ".join([f"`{kw}`" for kw in keywords])
-        )
-
-    # Probability breakdown
-    with st.expander(T["prob_expander"]):
-        cols = st.columns(3)
-        for i, (lbl, lbl_display, icon) in enumerate(T["prob_labels"]):
-            with cols[i]:
-                pct = probabilities.get(lbl, 0) * 100
-                st.progress(pct / 100)
-                st.caption(f"{icon} {lbl_display}: **{pct:.1f}%**")
-
-    # Warning advice for dangerous messages
-    if label != "ham":
-        st.warning(T["safety_warning"])
-
     # Feedback section
-    st.markdown("---")
+    st.divider()
     st.markdown(T["feedback_header"])
     correct_label = st.selectbox(
         T["feedback_select_label"],
@@ -1179,7 +1150,7 @@ def display_result(result: dict, original_text: str, T: dict) -> None:
         format_func=lambda x: T["feedback_placeholder"] if x == "" else x,
         key=f"feedback_select_{hash(original_text)}",
     )
-    if correct_label and correct_label != "":
+    if correct_label:
         actual = correct_label.split(" ")[0]
         if st.button(T["btn_feedback"], key=f"feedback_btn_{hash(original_text)}"):
             if submit_feedback(original_text, label, actual):
@@ -1188,11 +1159,47 @@ def display_result(result: dict, original_text: str, T: dict) -> None:
                 st.warning(T["feedback_fail"])
 
 
+def render_tips(T: dict) -> None:
+    """Education section: warning signs + hotlines."""
+    st.markdown(T["tips_page_header"])
+    st.markdown(
+        f'<p class="tips-intro">{T["tips_intro"]}</p>',
+        unsafe_allow_html=True,
+    )
+
+    for sign in T["warning_signs"]:
+        st.markdown(
+            f'<div class="tip-card">'
+            f'<div class="tip-icon">{sign["icon"]}</div>'
+            f'<div>'
+            f'<div class="tip-title">{sign["title"]}</div>'
+            f'<div class="tip-body">{sign["body"]}</div>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(T["tips_hotline_header"])
+    hotline_cards = "".join(
+        f'<div class="hotline-card">'
+        f'<div style="font-size:1.6rem;">{h["icon"]}</div>'
+        f'<div class="hotline-number">{h["number"]}</div>'
+        f'<div class="hotline-label">{h["label"]}</div>'
+        f'<div class="hotline-note">{h["note"]}</div>'
+        f'</div>'
+        for h in T["tips_hotlines"]
+    )
+    st.markdown(
+        f'<div class="hotline-grid">{hotline_cards}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ---------------------------------------------------------------------------
-# Main content
+# Main layout
 # ---------------------------------------------------------------------------
 
-# ── Fixed top-right language toggle (position: fixed via CSS) ─────────────
+# ── Language toggle (fixed top-right) ──────────────────────────────────────
 _is_th = st.session_state.lang == "th"
 st.markdown(
     f"""
@@ -1205,69 +1212,73 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Logo header ───────────────────────────────────────────────────────────
+# ── Logo / Header ───────────────────────────────────────────────────────────
 _LOGO_PATH = Path(__file__).parent / "assets" / "scamguard_logo.png"
 
 if _LOGO_PATH.exists():
-    _lcol, _mcol, _rcol = st.columns([1, 2, 1])
-    with _mcol:
+    _lc, _mc, _rc = st.columns([1, 2, 1])
+    with _mc:
         st.image(str(_LOGO_PATH), use_container_width=True)
 else:
     st.markdown(
-        f'<div class="main-title">{T["main_title"]}</div>', unsafe_allow_html=True
+        f'<div class="page-header">'
+        f'<div class="page-title">{T["main_title"]}</div>'
+        f'<div class="page-subtitle">{T["subtitle"]}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
     )
 
 st.markdown(
-    f'<div class="logo-subtitle">{T["subtitle"]}</div>',
+    f'<div style="text-align:center; font-size:1.1rem; color:#546e7a; '
+    f'padding-bottom:1rem;">{T["subtitle"]}</div>',
     unsafe_allow_html=True,
 )
 
-st.markdown("---")
+st.divider()
 
-# ── Tabs ──────────────────────────────────────────────────────────────────
-tab_check, tab_chat = st.tabs([T["tab_check"], T["tab_chat"]])
+# ── Tabs ────────────────────────────────────────────────────────────────────
+tab_check, tab_tips, tab_chat = st.tabs(
+    [T["tab_check"], T["tab_tips"], T["tab_chat"]]
+)
 
 # ===========================================================================
-# Tab 1: ตรวจสอบข้อความ
+# Tab 1: Check a Message
 # ===========================================================================
 with tab_check:
-    # ── Usage Guide ───────────────────────────────────────────────────────
-    render_guide(T)
+    # 3-step guide
+    render_steps(T)
 
-    st.markdown("---")
+    st.divider()
 
-    # Input area
+    # Input
     st.markdown(T["input_header"])
     user_input = st.text_area(
-        label="message",
+        label="message_input",
         placeholder=T["input_placeholder"],
-        height=160,
+        height=180,
         label_visibility="collapsed",
         key="user_input_area",
     )
 
     # Quick test examples
     with st.expander(T["examples_expander"]):
-        st.markdown(T["examples_header"])
         cols = st.columns(2)
         for i, (label, text) in enumerate(T["examples"].items()):
             with cols[i % 2]:
+                st.markdown(f"**{label}**")
                 st.code(text, language=None)
 
-    # Analyze button
-    col_btn1, col_btn2 = st.columns([3, 1])
-    with col_btn1:
-        analyze_clicked = st.button(
-            T["btn_analyze"],
-            type="primary",
-            use_container_width=True,
-            help=T["btn_analyze_help"],
-        )
-    with col_btn2:
-        clear_clicked = st.button(
-            T["btn_clear"],
-            use_container_width=True,
-        )
+    # Buttons (full-width primary, then small secondary)
+    analyze_clicked = st.button(
+        T["btn_analyze"],
+        type="primary",
+        use_container_width=True,
+        help=T["btn_analyze_help"],
+    )
+    clear_clicked = st.button(
+        T["btn_clear"],
+        use_container_width=True,
+    )
 
     if clear_clicked:
         st.rerun()
@@ -1281,53 +1292,55 @@ with tab_check:
                 result = call_predict_api(user_input.strip(), T)
 
             if result:
-                st.markdown("---")
+                st.divider()
                 st.markdown(T["result_header"])
-                display_result(result, user_input.strip(), T)
+                display_result(result, T, original_text=user_input.strip())
 
-                # Update session state
+                # Update counters
                 st.session_state.total_checked += 1
-                if result["label"] != "ham":
+                if result.get("label") != "ham":
                     st.session_state.spam_found += 1
 
-                # Add to history
                 st.session_state.history.append(
                     {
                         "text": user_input.strip(),
-                        "label": result["label"],
-                        "label_th": result["label_th"],
-                        "confidence": result["confidence"],
+                        "label": result.get("label"),
+                        "label_th": result.get("label_th", ""),
                         "timestamp": datetime.now().strftime("%H:%M"),
                     }
                 )
 
 # ===========================================================================
-# Tab 2: ถามตอบ AI (Chatbot) — LINE-like UI
+# Tab 2: Education — How to Spot Scams
+# ===========================================================================
+with tab_tips:
+    render_tips(T)
+
+# ===========================================================================
+# Tab 3: AI Chatbot
 # ===========================================================================
 with tab_chat:
     lang = st.session_state.lang
     online_txt = (
-        "🟢 ออนไลน์ — ถามได้เลยครับ/ค่ะ"
-        if lang == "th"
-        else "🟢 Online — Ask me anything"
+        "🟢 ออนไลน์ — ถามได้เลยครับ/ค่ะ" if lang == "th" else "🟢 Online — Ask me anything"
     )
 
-    # ── LINE-like header ──────────────────────────────────────────────────
+    # Chat header
     st.markdown(
         f"""
-        <div class="line-chat-header">
-            <div class="line-chat-avatar-wrap">🛡️</div>
+        <div class="chat-header">
+            <div class="chat-avatar">🛡️</div>
             <div>
-                <div class="line-chat-name">{T["chat_bot"]}</div>
-                <div class="line-chat-status">{online_txt}</div>
+                <div class="chat-name">{T["chat_bot"]}</div>
+                <div class="chat-status">{online_txt}</div>
             </div>
-            <div class="line-chat-badge">ScamGuard AI</div>
+            <div class="chat-badge">ScamGuard AI</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # ── Quick-question pills ──────────────────────────────────────────────
+    # Quick questions
     st.markdown(T["chat_quick_header"])
     quick_questions = CHAT_QUICK_QUESTIONS[lang]
     btn_cols = st.columns(3)
@@ -1336,9 +1349,9 @@ with tab_chat:
             if st.button(q, key=f"quick_q_{idx}", use_container_width=True):
                 st.session_state.chat_input_prefill = q
 
-    st.markdown("---")
+    st.divider()
 
-    # ── Process quick-question prefill: save as pending then rerun ────────
+    # Process prefill
     if st.session_state.chat_input_prefill:
         prefill = st.session_state.chat_input_prefill.strip()
         st.session_state.chat_input_prefill = ""
@@ -1346,36 +1359,20 @@ with tab_chat:
         st.session_state._chat_pending = prefill
         st.rerun()
 
-    # ── Display empty state ───────────────────────────────────────────────
+    # Empty state
     if not st.session_state.chat_messages and not st.session_state._chat_pending:
-        st.markdown(
-            f'<div class="chat-empty-state">'
-            f'<div class="chat-empty-icon">💬</div>'
-            f'{T["chat_empty"]}'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
+        st.info(T["chat_empty"])
 
-    # ── Render all messages from session state (above chat_input) ─────────
+    # Render messages
     for msg in st.session_state.chat_messages:
         if msg["role"] == "user":
             with st.chat_message("user"):
-                st.markdown(
-                    f'<div class="line-user-wrap">'
-                    f'<div class="line-bubble-user">{_escape_html(msg["content"])}</div>'
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
+                st.markdown(_escape_html(msg["content"]), unsafe_allow_html=True)
         else:
             with st.chat_message("assistant", avatar="🛡️"):
-                st.markdown(
-                    f'<div class="line-bot-wrap">'
-                    f'<div class="line-bubble-bot">{_md_to_html(msg["content"])}</div>'
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
+                st.markdown(_md_to_html(msg["content"]), unsafe_allow_html=True)
 
-    # ── Pending response: call API here so spinner appears above input ─────
+    # Pending response
     if st.session_state._chat_pending:
         with st.chat_message("assistant", avatar="🛡️"):
             with st.spinner(T["chat_thinking"]):
@@ -1395,30 +1392,39 @@ with tab_chat:
             )
         st.rerun()
 
-    # ── Clear button (only when there are messages) ───────────────────────
+    # Clear button
     if st.session_state.chat_messages:
         if st.button(T["chat_clear_btn"], key="clear_chat_btn"):
             st.session_state.chat_messages = []
             st.rerun()
 
-    # ── st.chat_input — pinned to bottom; save state + rerun to render above ─
+    # Chat input
     if prompt := st.chat_input(T["chat_input_placeholder"]):
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         st.session_state._chat_pending = prompt
         st.rerun()
 
-    # ── Hotline reminder ──────────────────────────────────────────────────
     st.info(T["chat_hotline_remind"])
 
 # ---------------------------------------------------------------------------
 # Footer
 # ---------------------------------------------------------------------------
-st.markdown("---")
+st.divider()
 st.markdown(
-    f"""
-    <div style="text-align: center; color: #9e9e9e; font-size: 0.9rem; padding: 1rem 0;">
-        {T["footer"]}
-    </div>
-    """,
+    f'<div class="page-footer">{T["footer"]}</div>',
+    unsafe_allow_html=True,
+)
+
+# Help + Privacy expanders in footer
+_fc1, _fc2 = st.columns(2)
+with _fc1:
+    with st.expander(T["sidebar_help_header"]):
+        st.markdown(T["sidebar_help_body"])
+with _fc2:
+    with st.expander(T["sidebar_privacy_header"]):
+        st.markdown(T["sidebar_privacy_body"])
+
+st.markdown(
+    f'<div class="footer-privacy">{T["footer_privacy"]}</div>',
     unsafe_allow_html=True,
 )
