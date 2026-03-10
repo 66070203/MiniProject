@@ -124,7 +124,15 @@ async def line_callback(request: Request):
     try:
         events = parser.parse(body_text, signature)
     except InvalidSignatureError:
-        logger.warning("LINE webhook: invalid signature received")
+        import base64, hashlib, hmac as _hmac
+        secret = os.environ.get("LINE_CHANNEL_SECRET", "")
+        computed = base64.b64encode(
+            _hmac.new(secret.encode("utf-8"), body, hashlib.sha256).digest()
+        ).decode("utf-8")
+        logger.warning(
+            "LINE webhook: invalid signature | received=%s | computed=%s | secret_len=%d | body_len=%d",
+            signature, computed, len(secret), len(body),
+        )
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     # LINE sends an empty events list when verifying the webhook URL — return 200 OK
