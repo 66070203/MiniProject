@@ -119,6 +119,10 @@ jobs:
 
       - name: SSH into GCP VM and deploy
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USER }}
