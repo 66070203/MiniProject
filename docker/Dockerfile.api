@@ -1,14 +1,7 @@
-# GuardianShield FastAPI Backend
+# ScamGuard FastAPI Backend
 FROM python:3.11-slim
 
 WORKDIR /app
-
-# Install system dependencies for PyThaiNLP
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -20,12 +13,12 @@ RUN python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
 # Copy source code
 COPY src/ ./src/
 COPY configs/ ./configs/
-COPY models/ ./models/
+RUN mkdir -p ./models
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV LOG_LEVEL=INFO
 
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]

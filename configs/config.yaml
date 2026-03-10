@@ -92,7 +92,7 @@ mlflow:
 
 api:
   host: "0.0.0.0"
-  port: 8000
+  port: 80
   title: "ScamGuard API"
   description: "Spam and phishing detection API for elderly users"
   version: "1.0.0"
@@ -100,4 +100,4 @@ api:
 
 streamlit:
   port: 8501
-  api_url: "http://localhost:8000"
+  api_url: "http://localhost"

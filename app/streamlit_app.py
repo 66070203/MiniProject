@@ -26,8 +26,8 @@ sys.path.insert(0, str(ROOT))
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-API_URL = os.environ.get("API_URL", "http://localhost:8000")
-APP_VERSION = "2.0.0"
+API_URL = os.environ.get("API_URL", "http://localhost")
+APP_VERSION = "1.0.0"
 
 # ---------------------------------------------------------------------------
 # Bilingual text dictionary (plain-language, jargon-free)

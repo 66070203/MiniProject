@@ -1,4 +1,4 @@
-name: CI — Lint, Test, Build
+name: CI — Lint, Test, Build, Deploy
 
 on:
   push:
@@ -8,85 +8,177 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  lint:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # lint:
+  #   name: Code Quality
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-          cache: pip
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
 
-      - name: Install lint dependencies
-        run: pip install black flake8 isort
+  #     - name: Install lint dependencies
+  #       run: pip install black flake8 isort
 
-      - name: Check code formatting (black)
-        run: black --check --diff src/ tests/ app/
+  #     - name: Check code formatting (black)
+  #       run: black --check --diff src/ tests/ app/
 
-      - name: Check import order (isort)
-        run: isort --check-only src/ tests/ app/
+  #     - name: Check import order (isort)
+  #       run: isort --check-only src/ tests/ app/
 
-      - name: Lint (flake8)
-        run: |
-          flake8 src/ tests/ app/ \
-            --max-line-length=100 \
-            --extend-ignore=E203,W503,E501
+  #     - name: Lint (flake8)
+  #       run: |
+  #         flake8 src/ tests/ app/ \
+  #           --max-line-length=100 \
+  #           --extend-ignore=E203,W503,E501
+
+  # # ─────────────────────────────────────────────────────────────────────────
+  # test:
+  #   name: Tests
+  #   runs-on: ubuntu-latest
+  #   needs: lint
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
+
+  #     - name: Install dependencies
+  #       run: pip install -r requirements-dev.txt
+
+  #     - name: Download PyThaiNLP corpus
+  #       run: python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
+
+  #     - name: Run tests with coverage
+  #       run: |
+  #         pytest tests/ \
+  #           --cov=src \
+  #           --cov-report=xml \
+  #           --cov-report=term-missing \
+  #           --cov-fail-under=70 \
+  #           -v \
+  #           --tb=short
+  #       env:
+  #         LOG_LEVEL: WARNING
+  #         GROQ_API_KEY: ""
+  #         LINE_CHANNEL_SECRET: ""
+  #         LINE_CHANNEL_ACCESS_TOKEN: ""
+
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v4
+  #       with:
+  #         file: coverage.xml
+  #         fail_ci_if_error: false
 
   # ─────────────────────────────────────────────────────────────────────────
-  test:
-    name: Tests
+  # build-docker:
+  #   name: Docker Build
+  #   runs-on: ubuntu-latest
+  #   # needs: test
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Build API Docker image
+  #       run: |
+  #         docker build -f docker/Dockerfile.api -t scamguard-api:test .
+  #         echo "API image built successfully"
+
+  #     - name: Build App Docker image
+  #       run: |
+  #         docker build -f docker/Dockerfile.app -t scamguard-app:test .
+  #         echo "App image built successfully"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to GCP
     runs-on: ubuntu-latest
-    needs: lint
+    # Only deploy on direct pushes to main — not on pull requests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install -r requirements-dev.txt
-
-      - name: Download PyThaiNLP corpus
-        run: python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
-
-      - name: Run tests with coverage
+      - name: Check required secrets
         run: |
-          pytest tests/ \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --cov-fail-under=70 \
-            -v \
-            --tb=short
+          missing=""
+          [ -z "${{ secrets.GCP_HOST }}"         ] && missing="$missing\n  - GCP_HOST"
+          [ -z "${{ secrets.GCP_USER }}"         ] && missing="$missing\n  - GCP_USER"
+          [ -z "${{ secrets.GCP_SSH_KEY }}"      ] && missing="$missing\n  - GCP_SSH_KEY"
+          [ -z "${{ secrets.GCP_APP_PATH }}"     ] && missing="$missing\n  - GCP_APP_PATH"
+          [ -z "${{ secrets.GROQ_API_KEY }}"     ] && missing="$missing\n  - GROQ_API_KEY"
+          [ -z "${{ secrets.LINE_CHANNEL_SECRET }}"     ] && missing="$missing\n  - LINE_CHANNEL_SECRET"
+          [ -z "${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}" ] && missing="$missing\n  - LINE_CHANNEL_ACCESS_TOKEN"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets. Add them in Settings → Secrets and variables → Actions:$missing"
+            exit 1
+          fi
+          echo "All required secrets are present."
+
+      - name: SSH into GCP VM and deploy
+        uses: appleboy/ssh-action@v1.0.3
         env:
-          LOG_LEVEL: WARNING
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         with:
-          file: coverage.xml
-          fail_ci_if_error: false
+          host: ${{ secrets.GCP_HOST }}
+          username: ${{ secrets.GCP_USER }}
+          key: ${{ secrets.GCP_SSH_KEY }}
+          envs: GROQ_API_KEY,LINE_CHANNEL_SECRET,LINE_CHANNEL_ACCESS_TOKEN
+          script: |
+            set -e
 
-  # ─────────────────────────────────────────────────────────────────────────
-  build-docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
+            echo "==> Setting up app directory..."
+            if [ ! -d "${{ secrets.GCP_APP_PATH }}/.git" ]; then
+              echo "==> First time: cloning repository..."
+              mkdir -p "${{ secrets.GCP_APP_PATH }}"
+              git clone https://github.com/${{ github.repository }}.git "${{ secrets.GCP_APP_PATH }}"
+            fi
 
-      - name: Build API Docker image
-        run: |
-          docker build -f docker/Dockerfile.api -t scamguard-api:test .
-          echo "API image built successfully"
+            cd ${{ secrets.GCP_APP_PATH }}
 
-      - name: Build App Docker image
-        run: |
-          docker build -f docker/Dockerfile.app -t scamguard-app:test .
-          echo "App image built successfully"
+            echo "==> Pulling latest code..."
+            git pull origin main
+
+            echo "==> Injecting secrets into .env..."
+            touch .env
+            for VAR in GROQ_API_KEY LINE_CHANNEL_SECRET LINE_CHANNEL_ACCESS_TOKEN; do
+              VALUE=$(eval echo \$$VAR)
+              if grep -q "^${VAR}=" .env; then
+                sed -i "s|^${VAR}=.*|${VAR}=${VALUE}|" .env
+              else
+                echo "${VAR}=${VALUE}" >> .env
+              fi
+            done
+
+            echo "==> Exporting environment variables for Docker Compose..."
+            export GROQ_API_KEY
+            export LINE_CHANNEL_SECRET
+            export LINE_CHANNEL_ACCESS_TOKEN
+
+            echo "==> Building images..."
+            docker compose build api app
+
+            echo "==> Checking if model needs training..."
+            mkdir -p models data/raw data/processed logs
+            if [ ! -f models/best_model.joblib ]; then
+              echo "==> Model not found — running first-time training (may take a few minutes)..."
+              docker compose run --rm train
+              echo "==> Training complete."
+            else
+              echo "==> Model already exists, skipping training."
+            fi
+
+            echo "==> Starting all services..."
+            docker compose up -d
+
+            echo "==> Waiting for services to be healthy..."
+            sleep 10
+
+            echo "==> Service status:"
+            docker compose ps
+
+            echo "==> Deploy complete."

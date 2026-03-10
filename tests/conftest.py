@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
 
 # Override config path for tests
 os.environ.setdefault("LOG_LEVEL", "WARNING")
+# Disable Groq LLM in tests — prevents network calls and import errors when no key is set
+os.environ.setdefault("GROQ_API_KEY", "")
 
 
 @pytest.fixture(scope="session")
