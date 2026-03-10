@@ -67,6 +67,8 @@ jobs:
         env:
           LOG_LEVEL: WARNING
           GROQ_API_KEY: ""
+          LINE_CHANNEL_SECRET: ""
+          LINE_CHANNEL_ACCESS_TOKEN: ""
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -106,12 +108,24 @@ jobs:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USER }}
           key: ${{ secrets.GCP_SSH_KEY }}
+          envs: GROQ_API_KEY,LINE_CHANNEL_SECRET,LINE_CHANNEL_ACCESS_TOKEN
           script: |
             set -e
             cd ${{ secrets.GCP_APP_PATH }}
 
             echo "==> Pulling latest code..."
             git pull origin main
+
+            echo "==> Injecting secrets into .env..."
+            touch .env
+            for VAR in GROQ_API_KEY LINE_CHANNEL_SECRET LINE_CHANNEL_ACCESS_TOKEN; do
+              VALUE=$(eval echo \$$VAR)
+              if grep -q "^${VAR}=" .env; then
+                sed -i "s|^${VAR}=.*|${VAR}=${VALUE}|" .env
+              else
+                echo "${VAR}=${VALUE}" >> .env
+              fi
+            done
 
             echo "==> Rebuilding and restarting all services..."
             docker compose up -d --build

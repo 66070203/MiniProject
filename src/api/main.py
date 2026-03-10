@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.api.chatbot import get_chatbot
+from src.api.line_router import router as line_router
 from src.api.database import (
     get_session,
     get_stats,
@@ -78,6 +79,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# LINE Messaging API webhook routes (/line/callback)
+app.include_router(line_router)
 
 
 # ---------------------------------------------------------------------------

@@ -42,3 +42,6 @@ seaborn>=0.12.0
 
 # LLM integration (Groq API)
 groq>=0.9.0
+
+# LINE Messaging API
+line-bot-sdk>=3.11.0
