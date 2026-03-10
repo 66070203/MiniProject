@@ -168,14 +168,67 @@ LINE_CHANNEL_ACCESS_TOKEN=<channel access token>
 
 ---
 
+## CI/CD Workflow
+
+### ภาพรวม Pipeline
+
+```
+git push main
+    │
+    ▼
+1. Lint          — black, isort, flake8
+2. Test          — pytest + coverage ≥ 70%
+3. Docker Build  — ตรวจสอบว่า image build ได้
+4. Deploy        — SSH เข้า GCP VM อัตโนมัติ
+```
+
+### สิ่งที่ Deploy ทำบน GCP VM
+
+```
+git pull origin main          ← ดึง code ใหม่
+inject secrets → .env         ← อัปเดต GROQ / LINE keys
+docker compose build          ← build image ใหม่
+    │
+    ├── models/best_model.joblib มีอยู่แล้ว?
+    │       NO  → docker compose run --rm train
+    │               (สร้างข้อมูล + เทรนโมเดล อัตโนมัติ)
+    │       YES → ข้ามการเทรน
+    │
+docker compose up -d          ← เริ่ม api + app + mlflow
+```
+
+**ครั้งแรกที่ deploy:** โมเดลยังไม่มี → เทรนอัตโนมัติ (~2-3 นาที)
+**deploy ครั้งถัดไป:** โมเดลมีอยู่แล้วบน VM disk → ข้ามการเทรน ทำให้เร็วขึ้น
+
+### GitHub Secrets ที่ต้องตั้งค่า
+
+ไปที่ **Settings → Secrets and variables → Actions** แล้วเพิ่ม:
+
+| Secret | คำอธิบาย |
+|--------|----------|
+| `GCP_HOST` | IP หรือ hostname ของ GCP VM |
+| `GCP_USER` | ชื่อ user สำหรับ SSH (เช่น `ubuntu`) |
+| `GCP_SSH_KEY` | Private key สำหรับ SSH (ทั้งหมด รวม header) |
+| `GCP_APP_PATH` | path ของโปรเจกต์บน VM (เช่น `/home/ubuntu/scamguard`) |
+| `GROQ_API_KEY` | Groq API key |
+| `LINE_CHANNEL_SECRET` | LINE channel secret |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE channel access token |
+
+---
+
 ## เทรนโมเดลใหม่
 
+**ผ่าน Docker (แนะนำ):**
+```bash
+docker compose run --rm train
+docker compose restart api
+```
+
+**ผ่าน Python โดยตรง:**
 ```bash
 python -m src.data.generator    # สร้างข้อมูลใหม่
 python -m src.data.ingestion    # แบ่งชุดข้อมูล
 python -m src.models.trainer    # เทรน + บันทึกผลใน MLflow
-
-# หลังเทรนเสร็จ restart API เพื่อโหลดโมเดลใหม่
 docker compose restart api
 ```
 
