@@ -127,8 +127,21 @@ jobs:
               fi
             done
 
-            echo "==> Rebuilding and restarting all services..."
-            docker compose up -d --build
+            echo "==> Building images..."
+            docker compose build api app
+
+            echo "==> Checking if model needs training..."
+            mkdir -p models data/raw data/processed logs
+            if [ ! -f models/best_model.joblib ]; then
+              echo "==> Model not found — running first-time training (may take a few minutes)..."
+              docker compose run --rm train
+              echo "==> Training complete."
+            else
+              echo "==> Model already exists, skipping training."
+            fi
+
+            echo "==> Starting all services..."
+            docker compose up -d
 
             echo "==> Waiting for services to be healthy..."
             sleep 10

@@ -20,7 +20,7 @@ RUN python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
 # Copy source code
 COPY src/ ./src/
 COPY configs/ ./configs/
-COPY models/ ./models/
+RUN mkdir -p ./models
 
 # Set environment variables
 ENV PYTHONPATH=/app

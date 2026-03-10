@@ -45,6 +45,28 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────────────────────────────────
+  # Model Training (run once on first deploy, or manually to retrain)
+  # Usage: docker compose run --rm train
+  # ─────────────────────────────────────────────────────────────────────────
+  train:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: scamguard-train
+    profiles: ["train"]
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+    command: >
+      sh -c "python -m src.data.generator &&
+             python -m src.data.ingestion &&
+             python -m src.models.trainer"
+
+  # ─────────────────────────────────────────────────────────────────────────
   # MLflow Tracking Server
   # ─────────────────────────────────────────────────────────────────────────
   mlflow:
