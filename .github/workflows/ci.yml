@@ -124,6 +124,14 @@ jobs:
           envs: GROQ_API_KEY,LINE_CHANNEL_SECRET,LINE_CHANNEL_ACCESS_TOKEN
           script: |
             set -e
+
+            echo "==> Setting up app directory..."
+            if [ ! -d "${{ secrets.GCP_APP_PATH }}/.git" ]; then
+              echo "==> First time: cloning repository..."
+              mkdir -p "${{ secrets.GCP_APP_PATH }}"
+              git clone git@github.com:${{ github.repository }}.git "${{ secrets.GCP_APP_PATH }}"
+            fi
+
             cd ${{ secrets.GCP_APP_PATH }}
 
             echo "==> Pulling latest code..."
