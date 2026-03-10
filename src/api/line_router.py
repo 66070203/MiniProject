@@ -60,39 +60,74 @@ def _get_line_sdk() -> tuple[Configuration, WebhookParser]:
 
 
 # ---------------------------------------------------------------------------
-# Reply formatting
+# Reply formatting  — persona: นุ้งสแปมการ์ด
 # ---------------------------------------------------------------------------
-_RISK_EMOJI = {
-    "low": "✅",
-    "medium": "⚠️",
-    "high": "🚨",
-}
-
 
 def _format_reply(result: dict) -> str:
-    """Convert a ScamGuard prediction dict into a Thai LINE reply message."""
-    emoji = _RISK_EMOJI.get(result.get("risk_level", ""), "❓")
-    label_th = result.get("label_th", result.get("label", ""))
-    risk_th = result.get("risk_level_th", result.get("risk_level", ""))
+    """Convert a ScamGuard prediction dict into a conversational Thai LINE reply
+    using the นุ้งสแปมการ์ด persona."""
+    label = result.get("label", "")
     confidence_pct = round(result.get("confidence", 0) * 100)
     explanation = result.get("explanation", "")
     keywords = result.get("keywords", [])
     llm_explanation = result.get("llm_explanation")
 
-    lines = [
-        f"{emoji} {label_th} | ความเสี่ยง: {risk_th} ({confidence_pct}%)",
-        "",
-        explanation,
-    ]
+    if label == "ham":
+        lines = [
+            f"ข้อความนี้ปลอดภัยเลยค่ะ ไม่มีอะไรน่าเป็นห่วงเลย (มั่นใจ {confidence_pct}%)",
+            "",
+            explanation,
+        ]
+        if llm_explanation:
+            lines += ["", llm_explanation]
+        lines += ["", "ถ้ามีข้อความไหนสงสัย ส่งมาให้นุ้งดูได้เลยนะคะ"]
 
-    if llm_explanation:
-        lines += ["", f"🤖 {llm_explanation}"]
+    elif label == "spam":
+        lines = [
+            f"อุ๊ย! ข้อความนี้เป็นสแปมเลยค่ะ ระวังด้วยนะ (มั่นใจ {confidence_pct}%)",
+            "",
+            explanation,
+        ]
+        if llm_explanation:
+            lines += ["", llm_explanation]
+        if keywords:
+            lines += ["", f"คำที่น่าสงสัย: {', '.join(keywords)}"]
+        lines += [
+            "",
+            "แนะนำอย่าตอบกลับหรือกดลิงก์อะไรนะคะ ลบทิ้งเลยดีกว่าค่ะ",
+            "ถ้าสงสัยเพิ่มเติม โทร 1599 สายด่วนไซเบอร์ได้เลย ฟรี 24 ชม. ค่ะ",
+        ]
 
-    if keywords:
-        lines += ["", f"⚠️ คำเตือน: {', '.join(keywords)}"]
+    elif label == "phishing":
+        lines = [
+            f"โอ้โห อันตรายมากเลยค่ะ! ข้อความนี้คือฟิชชิ่ง พยายามหลอกขโมยข้อมูลชัดเจนเลย (มั่นใจ {confidence_pct}%)",
+            "",
+            explanation,
+        ]
+        if llm_explanation:
+            lines += ["", llm_explanation]
+        if keywords:
+            lines += ["", f"สัญญาณอันตราย: {', '.join(keywords)}"]
+        lines += [
+            "",
+            "ห้ามคลิกลิงก์ ห้ามให้ OTP หรือรหัสผ่านกับใครนะคะ อันตรายมากจริงๆ ค่ะ",
+            "โทร 1599 สายด่วนไซเบอร์ด่วนเลยค่ะ ฟรี 24 ชม.",
+        ]
 
-    if result.get("label") in ("spam", "phishing"):
-        lines += ["", "📞 โทร 1599 สายด่วนไซเบอร์ (ฟรี 24 ชม.)"]
+    else:
+        # fallback for unrecognised label
+        risk_th = result.get("risk_level_th", result.get("risk_level", ""))
+        lines = [
+            f"ผลวิเคราะห์: {result.get('label_th', label)} | ความเสี่ยง: {risk_th} ({confidence_pct}%)",
+            "",
+            explanation,
+        ]
+        if llm_explanation:
+            lines += ["", llm_explanation]
+        if keywords:
+            lines += ["", f"คำเตือน: {', '.join(keywords)}"]
+        if label in ("spam", "phishing"):
+            lines += ["", "โทร 1599 สายด่วนไซเบอร์ (ฟรี 24 ชม.)"]
 
     return "\n".join(lines)
 
