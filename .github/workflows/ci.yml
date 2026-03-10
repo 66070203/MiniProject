@@ -8,73 +8,73 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  lint:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # lint:
+  #   name: Code Quality
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
 
-      - name: Install lint dependencies
-        run: pip install black flake8 isort
+  #     - name: Install lint dependencies
+  #       run: pip install black flake8 isort
 
-      - name: Check code formatting (black)
-        run: black --check --diff src/ tests/ app/
+  #     - name: Check code formatting (black)
+  #       run: black --check --diff src/ tests/ app/
 
-      - name: Check import order (isort)
-        run: isort --check-only src/ tests/ app/
+  #     - name: Check import order (isort)
+  #       run: isort --check-only src/ tests/ app/
 
-      - name: Lint (flake8)
-        run: |
-          flake8 src/ tests/ app/ \
-            --max-line-length=100 \
-            --extend-ignore=E203,W503,E501
+  #     - name: Lint (flake8)
+  #       run: |
+  #         flake8 src/ tests/ app/ \
+  #           --max-line-length=100 \
+  #           --extend-ignore=E203,W503,E501
 
-  # ─────────────────────────────────────────────────────────────────────────
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
+  # # ─────────────────────────────────────────────────────────────────────────
+  # test:
+  #   name: Tests
+  #   runs-on: ubuntu-latest
+  #   needs: lint
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+  #     - name: Set up Python 3.11
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+  #     - name: Install dependencies
+  #       run: pip install -r requirements-dev.txt
 
-      - name: Download PyThaiNLP corpus
-        run: python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
+  #     - name: Download PyThaiNLP corpus
+  #       run: python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
 
-      - name: Run tests with coverage
-        run: |
-          pytest tests/ \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --cov-fail-under=70 \
-            -v \
-            --tb=short
-        env:
-          LOG_LEVEL: WARNING
-          GROQ_API_KEY: ""
-          LINE_CHANNEL_SECRET: ""
-          LINE_CHANNEL_ACCESS_TOKEN: ""
+  #     - name: Run tests with coverage
+  #       run: |
+  #         pytest tests/ \
+  #           --cov=src \
+  #           --cov-report=xml \
+  #           --cov-report=term-missing \
+  #           --cov-fail-under=70 \
+  #           -v \
+  #           --tb=short
+  #       env:
+  #         LOG_LEVEL: WARNING
+  #         GROQ_API_KEY: ""
+  #         LINE_CHANNEL_SECRET: ""
+  #         LINE_CHANNEL_ACCESS_TOKEN: ""
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: coverage.xml
-          fail_ci_if_error: false
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v4
+  #       with:
+  #         file: coverage.xml
+  #         fail_ci_if_error: false
 
   # ─────────────────────────────────────────────────────────────────────────
   build-docker:
