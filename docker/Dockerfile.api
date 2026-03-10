@@ -1,14 +1,7 @@
-# GuardianShield FastAPI Backend
+# ScamGuard FastAPI Backend
 FROM python:3.11-slim
 
 WORKDIR /app
-
-# Install system dependencies for PyThaiNLP
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .

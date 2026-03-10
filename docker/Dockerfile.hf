@@ -1,10 +1,8 @@
-# GuardianShield — HuggingFace Spaces Deployment
+# ScamGuard — HuggingFace Spaces Deployment
 # Single image: runs Streamlit with embedded model (no separate API needed)
 FROM python:3.11-slim
 
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -15,7 +13,7 @@ RUN python -c "import pythainlp; pythainlp.corpus.download('words_th')" || true
 COPY app/ ./app/
 COPY src/ ./src/
 COPY configs/ ./configs/
-COPY models/ ./models/
+RUN mkdir -p ./models
 
 ENV PYTHONPATH=/app
 ENV LOG_LEVEL=INFO
